@@ -46,31 +46,17 @@ def generate_personalized_prompt(user_id, user_feeling):
     and connects with their personal interests and current emotions.
     """
 
+    system_prompt = "Hey there! I'm here to guide you through your journaling journey like a thoughtful friend. I’ll ask reflective questions, cheer you on, and help you explore your thoughts in a meaningful way. Let’s take this one step at a time—no judgment, just growth!"
+
     # Get AI-generated prompt
     response = openai.chat.completions.create(
         model="gpt-4o-mini",
-        messages=[{"role": "system", "content": "You are an intelligent journaling assistant."},
+        messages=[{"role": "system", "content": system_prompt},
                   {"role": "user", "content": prompt}],
         max_tokens=200
     )
     
     prompt_question = response.choices[0].message.content.strip()
 
-    # Generate a response based on the user's entry
-    motivation_prompt = f"""
-    Based on the user's past journaling experience and personal profile, generate a short but uplifting motivational message.
-    Ensure the message is encouraging and aligns with their personality type and journaling habits.
-    """
-
-    motivation_response = openai.chat.completions.create(
-        model="gpt-4o-mini",
-        messages=[
-            {"role": "system", "content": "You are a supportive AI journaling assistant."},
-            {"role": "user", "content": motivation_prompt}
-        ],
-        max_tokens=100
-    )
-
-    motivation_message = motivation_response.choices[0].message.content.strip()
 
     return {prompt_question}

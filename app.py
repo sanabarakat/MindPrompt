@@ -2,12 +2,13 @@ import streamlit as st
 import datetime
 import uuid  
 from firebase_config import init_firebase
-from model import generate_personalized_prompt
-from sentiment_analysis import analyze_sentiment  
-from model_response import generate_reply
+import firebase_admin
+from firebase_admin import credentials, firestore
+from generate_prompt import generate_personalized_prompt
+from sentiment_analysis import analyze_sentiment
+from generate_summary import generate_session_summary  
 
 
-# Initialize Firebase
 db = init_firebase()
 
 st.title("📝 MindPrompt - AI Journaling")
@@ -28,22 +29,23 @@ if "user_id" not in st.session_state:
         hobbies = st.text_area("Enter your hobbies (comma-separated):")
         journaling_frequency = st.radio("How often do you journal?", ["Daily", "Weekly", "Occasionally"])
         journaling_time = st.radio("What time of day do you prefer to journal?", ["Morning", "Afternoon", "Evening"])
-        reason = st.selectbox("What would you say is the main reason you want to journal?", ["Self-reflection", "Mental health", "Productivity", "Creativity", "Tracking personal growth", "Practice Gratitude", "Other"])
-        expression = st.selectbox("How do you usually express yourself?", ["Writing", "Drawing", "Talking", "Keeping it to yourself", "Other"])
+        reason = st.selectbox("What would you say is the main reason you want to journal?", 
+                              ["Daily Reflection",  "Personal Growth", "Coping & Relaxing", 
+                               "Understanding Emotions", "Gratitude", "Stress Managamenet","Other"])
+        expression = st.selectbox("How do you usually express yourself?", 
+                                  ["Writing", "Drawing", "Talking", "keeping it to yourself", "Other"])
         stress = st.radio("Do you experience frequent stress or anxiety?", ["Yes", "No", "Sometimes"])
-        stress_reason = st.selectbox("What stresses you out the most?", ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"])
-        question_format = st.radio("What format of journaling questions do you prefer?", ["Open-ended questions", "Structured reflection prompts"])
-
-        # **GDPR Agreement Checkbox**
-        gdpr_agreement = st.checkbox(
-            'I agree to the [Terms & Conditions](https://www.consilium.europa.eu/en/policies/data-protection-regulation/#:~:text=The%20GDPR%20lists%20the%20rights,his%20or%20her%20personal%20data)',
-            help="You must agree to our terms to create an account."
-        )
-
+        stress_reason = st.selectbox("What stresses you out the most?", 
+                                     ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", 
+                                      "Finances", "Prefer not to say", "Other"])
+        question_format = st.radio("What format of journaling questions do you prefer?", 
+                                   ["open-ended questions", "structured reflection prompts"])
+        
+        agree_to_terms = st.checkbox(
+            "I agree to the [terms and conditions](https://www.consilium.europa.eu/en/policies/data-protection-regulation/#:~:text=The%20GDPR%20lists%20the%20rights,his%20or%20her%20personal%20data)")
+        
         if st.button("Create Account"):
-            if not gdpr_agreement:
-                st.warning("⚠️ You must agree to the Terms & Conditions to continue.")
-            elif name.strip():
+            if name.strip() and agree_to_terms:
                 user_id = str(uuid.uuid4())  # Generate a unique User ID
                 user_data = {
                     "user_id": user_id,
@@ -72,8 +74,7 @@ if "user_id" not in st.session_state:
                 st.success(f"🎉 Account created successfully! Your User ID: `{user_id}`")
                 st.info("📌 Save your User ID to log in next time.")  
             else:
-                st.warning("⚠️ Please enter your name.")
-
+                st.warning("⚠️ Please enter all details and agree to the terms.")
 
     # **Returning User Login**
     elif user_choice == "Returning User":
@@ -104,6 +105,7 @@ if "user_id" in st.session_state:
 
     if "chat_history" not in st.session_state:
         st.session_state["chat_history"] = []
+        st.session_state["session_entries"] = []  # Stores both questions & answers
         st.session_state["awaiting_response"] = "feeling_check"
 
     # **Display Chat History**
@@ -115,67 +117,69 @@ if "user_id" in st.session_state:
         user_feeling = st.text_area("How are you feeling today?")
         if st.button("Submit Feeling"):
             if user_feeling.strip():
+                st.session_state["session_entries"].append({"question": "How are you feeling today?", "answer": user_feeling})
                 st.session_state["chat_history"].append(("User", user_feeling))
-                st.session_state["latest_feeling"] = user_feeling
-
-                # **Generate a short AI response to their feeling**
-                ai_response = f"Thank you for sharing. It's important to acknowledge our emotions. I hear that what you're feeling. Let's explore this further!"
+                ai_response = "Thank you for sharing. It's important to acknowledge your emotions. Let's explore this further!"
                 st.session_state["chat_history"].append(("AI", ai_response))
-
-                # **Generate first journaling prompt**
-                prompt_response = generate_personalized_prompt(st.session_state["user_id"], user_feeling)
-                st.session_state["chat_history"].append(("AI", prompt_response))
-
-                st.session_state["awaiting_response"] = "user_journal_entry"
+                st.session_state["awaiting_response"] = "generate_prompt"
                 st.rerun()
 
-    # **Step 2: Display the Generated Prompt & Ask for Journal Entry**
+    # **Step 2: Generate AI Prompt**
+    if st.session_state["awaiting_response"] == "generate_prompt":
+        last_feeling = st.session_state["session_entries"][0]["answer"]  # Extract feeling
+        prompt = generate_personalized_prompt(st.session_state["user_id"], last_feeling, st.session_state["session_entries"])
+        
+        # **Store the AI-generated prompt**
+        st.session_state["session_entries"].append({"question": prompt, "answer": None})  
+        st.session_state["chat_history"].append(("AI", f"💡 **Journaling Prompt:** {prompt}"))
+        st.session_state["awaiting_response"] = "user_journal_entry"
+        st.rerun()
+
+    # **Step 3: Journal Entry**
     if st.session_state["awaiting_response"] == "user_journal_entry":
-        st.write(f"💡 **Journaling Prompt:**\n\n{st.session_state['chat_history'][-1][1]}")  # Show last AI-generated question
-        
         journal_entry = st.text_area("Write your journal entry:")
-        
-        if st.button("Submit Entry"):
-            if journal_entry.strip():
-                sentiment = analyze_sentiment(journal_entry)
-                timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
-                
-                # **Save response in database**
-                journal_data = {
-                    "user_id": st.session_state["user_id"],
-                    "feeling": st.session_state["latest_feeling"],
-                    "prompt": st.session_state["chat_history"][-1][1],  # Store last AI question
-                    "entry": journal_entry,
-                    "sentiment": sentiment,
-                    "timestamp": timestamp  
-                }
-                db.collection("journals").add(journal_data)
+        col1, col2 = st.columns(2)
 
-                # **AI Generates a Thoughtful Response**
-                ai_feedback = generate_reply(st.session_state["user_id"], journal_entry)
-                
-                # **Append responses to chat history**
-                st.session_state["chat_history"].append(("User", journal_entry))
-                st.session_state["chat_history"].append(("AI", ai_feedback))  # AI-generated supportive message
+        with col1:
+            if st.button("Submit Answer"):
+                if journal_entry.strip():
+                    # **Save answer to the last generated question**
+                    if st.session_state["session_entries"][-1]["answer"] is None:
+                        st.session_state["session_entries"][-1]["answer"] = journal_entry  
+                    else:
+                        st.session_state["session_entries"].append({"question": None, "answer": journal_entry})
+                    
+                    st.session_state["chat_history"].append(("User", journal_entry))
+                    st.session_state["awaiting_response"] = "generate_prompt"
+                    st.rerun()
 
-                # Move to next step: Ask if they want another question
-                st.session_state["awaiting_response"] = "ask_next_question"
-                st.rerun()
+        with col2:
+            if st.button("Submit Answer and End Session"):
+                if journal_entry.strip():
+                    # **Save final answer before ending session**
+                    if st.session_state["session_entries"][-1]["answer"] is None:
+                        st.session_state["session_entries"][-1]["answer"] = journal_entry
+                    else:
+                        st.session_state["session_entries"].append({"question": None, "answer": journal_entry})
 
+                    # **Generate final session summary**
+                    summary = generate_session_summary(st.session_state["session_entries"])
+                    st.session_state["chat_history"].append(("AI", f"📌 **Final Reflection**:\n\n{summary}"))
 
-    # **Step 3: Ask If User Wants Another Question**
-    if st.session_state["awaiting_response"] == "ask_next_question":
-        # **Display AI’s response before moving on**
-        st.write(f"🤖 **AI:** {st.session_state['chat_history'][-1][1]}")
+                    # **Save entire conversation in Firebase (all Q&A pairs)**
+                    db.collection("journals").add({
+                        "user_id": st.session_state["user_id"],
+                        "session_entries": st.session_state["session_entries"],
+                        "timestamp": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                    })
 
-        user_choice = st.radio("Would you like another question?", ["Yes", "No"])
-        
-        if st.button("Continue"):
-            if user_choice == "Yes":
-                prompt_response = generate_personalized_prompt(st.session_state["user_id"], st.session_state["latest_feeling"])
-                st.session_state["chat_history"].append(("AI", prompt_response))
-                st.session_state["awaiting_response"] = "user_journal_entry"
-            else:
-                st.session_state["chat_history"].append(("AI", "Thank you for journaling today! See you next time."))
-                st.session_state["awaiting_response"] = None
+                    st.session_state["awaiting_response"] = "session_summary"
+                    st.rerun()
+
+    # **Step 4: Show Final Summary**
+    if st.session_state["awaiting_response"] == "session_summary":
+        st.subheader("📌 **Final Reflection from Your Journaling Session**")
+        st.write(st.session_state["chat_history"][-1][1])  # Show only final reflection
+        if st.button("Close Session"):
+            st.session_state.clear()
             st.rerun()
