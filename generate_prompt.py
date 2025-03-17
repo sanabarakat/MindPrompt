@@ -5,7 +5,7 @@ import openai
 load_dotenv()  
 
 openai.api_key = os.getenv("OPENAI_API_KEY") 
-from retrieval import retrieve_user_data
+from testing_failed.retrieval import retrieve_user_data
 
 def generate_personalized_prompt(user_id, user_feeling, session_entries):
     """Generate a unique, evolving journaling prompt based on past reflections."""
@@ -37,7 +37,7 @@ def generate_personalized_prompt(user_id, user_feeling, session_entries):
     response = openai.chat.completions.create(
         model="gpt-4o-mini",
         messages=[
-            {"role": "system", "content": "You are a thoughtful AI journaling assistant helping users self-reflect deeply."},
+            {"role": "system", "content": "You are a thoughtful AI journaling assistant helping users self-reflect deeply. with one question at a time."},
             {"role": "user", "content": prompt}
         ],
         max_tokens=200

@@ -1,6 +1,6 @@
 import os
 import openai
-from retrieval import retrieve_user_data
+from testing_failed.retrieval import retrieve_user_data
 from dotenv import load_dotenv
 
 # Load environment variables
