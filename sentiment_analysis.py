@@ -1,7 +1,7 @@
 from transformers import pipeline
 
 # Load EmoBERTa model from Hugging Face
-sentiment_pipeline = pipeline("text-classification", model="tae898/emoberta-large", return_all_scores=True)
+sentiment_pipeline = pipeline("text-classification", model="tae898/emoberta-large", return_all_scores=True, framework="pt")
 
 def analyze_sentiment(text):
     """Analyze sentiment using EmoBERTa and return scores."""
