@@ -7,10 +7,6 @@ from wordcloud import WordCloud
 def plot_emotion_trends(emotional_data):
     """Generate multiple insightful visualizations based on user journaling data."""
 
-    # 🔍 Debug: Print Retrieved Data Before Processing
-    st.subheader("🔍 Debug: Retrieved Data Before Processing")
-    st.write(emotional_data)
-
     if not emotional_data or len(emotional_data) == 0:
         st.warning("⚠️ No emotional data available. Start journaling to track trends!")
         return
@@ -44,21 +40,7 @@ def plot_emotion_trends(emotional_data):
     df["neutral"] = df["sentiment"].apply(lambda x: x["emotion_scores"].get("neutral", 0) if isinstance(x, dict) else 0)
     df["surprise"] = df["sentiment"].apply(lambda x: x["emotion_scores"].get("surprise", 0) if isinstance(x, dict) else 0)
 
-    # **1️⃣ 📈 Emotion Trends Over Time**
-    st.subheader("📈 Emotion Trends Over Time")
-    plt.figure(figsize=(12, 6))
-    sns.lineplot(data=df, x="timestamp", y=df["joy"], label="Joy")
-    sns.lineplot(data=df, x="timestamp", y=df["sadness"], label="Sadness")
-    sns.lineplot(data=df, x="timestamp", y=df["anger"], label="Anger")
-    sns.lineplot(data=df, x="timestamp", y=df["neutral"], label="Neutral")
-    sns.lineplot(data=df, x="timestamp", y=df["surprise"], label="Surprise")
-    plt.xlabel("Time")
-    plt.ylabel("Emotion Score")
-    plt.title("Emotion Trends Over Time")
-    plt.legend()
-    st.pyplot(plt)
-
-    # **2️⃣ ☁️ Word Cloud for Most Used Words**
+    # **Word Cloud for Most Used Words**
     st.subheader("☁️ Most Frequent Words in Journal Entries")
 
     all_text = " ".join(entry["answer"] for entry in emotional_data if "answer" in entry)
@@ -83,8 +65,7 @@ def plot_emotion_trends(emotional_data):
     else:
         st.warning("⚠️ Not enough journal entries to generate a word cloud.")
 
-
-    # **3️⃣ 📊 Sentiment Distribution Pie Chart**
+    # **Sentiment Distribution Pie Chart**
     st.subheader("📊 Sentiment Distribution")
     emotion_counts = df["dominant_emotion"].value_counts()
 
@@ -93,7 +74,7 @@ def plot_emotion_trends(emotional_data):
     plt.title("Proportion of Different Emotions in Journal Entries")
     st.pyplot(plt)
 
-    # **5️⃣ 🕒 Journaling Frequency Over Time**
+    # **Journaling Frequency Over Time**
     st.subheader("🕒 Journaling Frequency Over Time")
     df["date"] = df["timestamp"].dt.date
     journal_counts = df["date"].value_counts().sort_index()
@@ -106,4 +87,34 @@ def plot_emotion_trends(emotional_data):
     plt.title("User Journaling Frequency Over Time")
     st.pyplot(plt)
 
-    st.success("✅ All visualizations displayed successfully!")
+    plot_weekly_emotion_trends(df)
+
+
+def plot_weekly_emotion_trends(df):
+    """Generates a bar chart showing dominant emotions by day of the week."""
+
+    # Ensure timestamp and dominant emotion exist
+    if "timestamp" not in df.columns or "dominant_emotion" not in df.columns:
+        st.warning("⚠️ Not enough data to generate a weekly emotion trend.")
+        return
+
+    # Extract day of the week (0 = Monday, 6 = Sunday)
+    df["day_of_week"] = df["timestamp"].dt.day_name()
+
+    # Count dominant emotions per day
+    emotion_counts = df.groupby("day_of_week")["dominant_emotion"].value_counts().unstack().fillna(0)
+
+    # Sort by actual weekday order
+    weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+    emotion_counts = emotion_counts.reindex(weekday_order)
+
+    # Plot the emotion distribution per day
+    st.subheader("📅 Weekly Emotion Patterns")
+    plt.figure(figsize=(12, 6))
+    emotion_counts.plot(kind="bar", stacked=True, colormap="coolwarm", alpha=0.85)
+    plt.xlabel("Day of the Week")
+    plt.ylabel("Number of Entries")
+    plt.title("Dominant Emotions by Day of the Week")
+    plt.legend(title="Emotion", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.xticks(rotation=45)
+    st.pyplot(plt)

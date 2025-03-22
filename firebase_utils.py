@@ -51,7 +51,7 @@ def get_latest_journal_entry(user_id):
                 entries.append(entry)
 
         print(f"✅ Retrieved {len(entries)} journal entries for user {user_id}")
-        return entries if entries else None  # Return full list of past entries
+        return entries if entries else []
 
     except Exception as e:
         print(f"🔥 Firestore Query Error: {e}")
@@ -78,5 +78,24 @@ def save_journal_entry(user_id, session_entries):
         print("✅ Journal session saved successfully!")
     except Exception as e:
         print(f"🔥 Firestore Save Error: {e}")
+
+
+def retrieve_user_data(user_id):
+    """Retrieve user data and past journal entries from Firestore."""
+    db = get_firestore_client()  # Ensure Firebase is initialized
+
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if not user_doc.exists:
+        return None, []
+
+    user_data = user_doc.to_dict()
+
+    # Retrieve past journal entries
+    journals_ref = db.collection("users").document(user_id).collection("journals").stream()
+    past_entries = [{"question": j.to_dict().get("question"), "answer": j.to_dict().get("answer")} for j in journals_ref]
+
+    return user_data, past_entries
 
 
