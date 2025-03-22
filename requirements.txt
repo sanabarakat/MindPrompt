@@ -3,4 +3,4 @@ firebase-admin
 python-dotenv
 openai
 pandas
-
+transformers
