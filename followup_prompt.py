@@ -3,10 +3,9 @@ import os
 from dotenv import load_dotenv
 import openai
 from firebase_utils import get_latest_journal_entry, retrieve_user_data
+import streamlit as st
 
-load_dotenv()
-openai_api_key = os.getenv("OPENAI_API_KEY")
-openai_client = OpenAI(api_key=openai_api_key)
+openai_client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 def generate_followup_prompt(user_id, user_feeling, session_entries):
     """Generates a follow-up question based on the user's latest journal entry."""

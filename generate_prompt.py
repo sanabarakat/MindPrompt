@@ -1,10 +1,10 @@
 import os
 from dotenv import load_dotenv
 import openai
+import streamlit as st
+from openai import OpenAI
 
-load_dotenv()  
-
-openai.api_key = os.getenv("OPENAI_API_KEY") 
+openai_client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 from testing_failed.retrieval import retrieve_user_data
 
 def generate_personalized_prompt(user_id, user_feeling, session_entries):

@@ -2,11 +2,11 @@ import os
 import openai
 from testing_failed.retrieval import retrieve_user_data
 from dotenv import load_dotenv
+from openai import OpenAI
 
-# Load environment variables
-load_dotenv()
+import streamlit as st
 
-openai.api_key = os.getenv("OPENAI_API_KEY")
+openai_client = OpenAI(api_key=st.secrets["openai"]["api_key"])
 
 def generate_reply(user_id, user_entry):
     """Generate a supportive AI response based on the user's journal entry."""
