@@ -11,3 +11,6 @@ def init_firebase():
         cred = credentials.Certificate(cred_dict)
         firebase_admin.initialize_app(cred)
     return firestore.client()
+
+
+db = init_firebase()
