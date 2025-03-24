@@ -3,8 +3,8 @@ firebase-admin
 python-dotenv
 openai
 pandas
-transformers
-torch
+transformers==4.36.2
+torch==2.0.1
 matplotlib
 seaborn
 wordcloud
