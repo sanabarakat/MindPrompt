@@ -1,3 +1,6 @@
+import os
+os.environ["STREAMLIT_ENV"] = "production"
+
 import streamlit as st
 import datetime
 import uuid  
