@@ -141,13 +141,17 @@ if st.session_state.page_state == "home":
         elif st.session_state.login_mode == "forgot":
             st.subheader("🔐 Reset Your Password")
             reset_email = st.text_input("Enter your email to reset password:")
+            
             if st.button("Send Reset Code"):
                 if reset_email.strip():
                     reset_code = str(uuid.uuid4())[:8]
                     st.session_state["reset_code"] = reset_code
                     st.session_state["reset_email"] = reset_email
-                    st.warning(f"A password reset code was generated: **{reset_code}** (in production, you'd email it!)")
+                    
+                    # 🛠️ Set correct page state here!
                     st.session_state.page_state = "reset_password"
+                    
+                    st.warning(f"A password reset code was generated: **{reset_code}** (this should be emailed)")
                     st.rerun()
                 else:
                     st.warning("⚠️ Please enter your email.")
@@ -178,12 +182,6 @@ elif st.session_state.page_state == "reset_password":
                 st.error("❌ User not found.")
         else:
             st.error("❌ Incorrect reset code.")
-
-    if st.button("🔙 Back to Login"):
-        st.session_state.login_mode = "normal"
-        st.rerun()
-
-
 
 
 
