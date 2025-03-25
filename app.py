@@ -371,11 +371,41 @@ elif st.session_state.page_state == "edit_profile":
 
 
 
-# === JOURNALING RESPONSE ===
-if st.session_state.get("awaiting_response") == "user_journal_entry":
-    
-    if st.session_state.page_state == "personalized":
-        journal_entry = st.text_area("Your response:", key="personalized_response")
+elif st.session_state.page_state == "personalized":
+
+    show_page_intro(
+        "Personalized Journaling",
+        "This mode starts with how you’re feeling today and uses AI to generate follow-up questions in real-time. "
+        "Each session adapts to your mood, past reflections, and journaling style — helping you dive deeper into your thoughts with personalized guidance."
+    )
+
+    if "feeling" not in st.session_state:
+        # Step 1: Ask for initial feeling
+        user_feeling = st.text_area("How are you feeling today?", key="feeling_input")
+
+        col1, col2 = st.columns([1, 1])
+        with col1:
+            if st.button("Submit Feeling", key="submit_feeling") and user_feeling.strip():
+                st.session_state.chat_history.append(("User", user_feeling))
+                followup_prompt = generate_followup_prompt(
+                    st.session_state.user_id, user_feeling, st.session_state.session_entries
+                )
+                st.session_state.chat_history.append(("AI", followup_prompt))
+                st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": user_feeling})
+                st.session_state.session_entries.append({"question": followup_prompt, "answer": None})
+                st.session_state.awaiting_response = "user_journal_entry"
+                st.session_state.feeling = user_feeling  # Now feeling is set
+                st.rerun()
+
+        with col2:
+            if st.button("🔙 Back", key="back_from_personalized"):
+                st.session_state.page_state = "mode_selection"
+                st.rerun()
+
+    else:
+        # Step 2: Journal entry (follow-up to initial feeling)
+        st.markdown("**Your response:**")
+        journal_entry = st.text_area("Write your thoughts here:", key="personalized_response")
 
         col1, col2 = st.columns(2)
         with col1:
@@ -384,8 +414,8 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
                 st.session_state.chat_history.append(("User", journal_entry))
                 st.session_state.session_entries[-1]["answer"] = journal_entry
                 st.session_state.session_entries[-1]["sentiment"] = sentiment_score
-                
-                # Generate the next follow-up prompt
+
+                # Get another follow-up prompt
                 followup_prompt = generate_followup_prompt(
                     st.session_state.user_id,
                     journal_entry,
@@ -407,13 +437,10 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
                 st.success("Session saved! 🌟")
                 st.markdown(f"**Reflection Summary:** {summary}")
                 if st.button("Start New Session", key="restart_personalized"):
+                    for key in ["feeling", "first_prompt", "chat_history", "session_entries"]:
+                        st.session_state.pop(key, None)
                     st.session_state.page_state = "mode_selection"
-                    st.session_state.chat_history.clear()
-                    st.session_state.session_entries.clear()
-                    if "first_prompt" in st.session_state:
-                        del st.session_state["first_prompt"]
-                    if "feeling" in st.session_state:
-                        del st.session_state["feeling"]
                     st.rerun()
+
 
 
