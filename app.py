@@ -18,6 +18,8 @@ from emotion_trends import plot_emotion_trends
 # Initialize Firebase
 db = init_firebase()
 
+st.write("🔑", st.secrets["OPENAI_API_KEY"])
+
 # Custom Styling for Chat Display
 st.markdown("""
     <style>
