@@ -4,8 +4,11 @@ from dotenv import load_dotenv
 import openai
 from firebase_utils import retrieve_user_data
 import streamlit as st
+import openai
 
-openai_client = OpenAI(api_key=st.secrets["openai"]["api_key"])
+openai.api_key = st.secrets["OPENAI_API_KEY"]
+
+openai_client = OpenAI(api_key=openai.api_key)
 
 def generate_session_summary(session_entries, user_id):
     """Generates a final session summary based on the user's journal entries."""
