@@ -29,6 +29,11 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+def show_page_intro(title, description):
+    st.markdown(f"### 📘 {title}")
+    st.markdown(f"<div style='color: gray; font-size: 15px;'>{description}</div>", unsafe_allow_html=True)
+
+
 st.markdown("<h1 class='main-title'>📝 MindPrompt - AI Journaling</h1>", unsafe_allow_html=True)
 st.markdown("<h2 class='sub-title'>Where AI meets self-reflection!</h2>", unsafe_allow_html=True)
 
@@ -207,6 +212,9 @@ elif st.session_state.page_state == "mode_selection":
 
 # === PAGE: PERSONALIZED JOURNALING ===
 elif st.session_state.page_state == "personalized" and "feeling" not in st.session_state:
+    show_page_intro("Personalized Journaling", "This mode starts with how you’re feeling today and uses AI to generate follow-up questions in real-time. Each session adapts to your mood, past reflections, and journaling style — helping you dive deeper into your thoughts with personalized guidance.")
+
+
     user_feeling = st.text_area("How are you feeling today?", key="feeling_input")
     
     if st.button("Submit Feeling", key="submit_feeling") and user_feeling.strip():
@@ -228,6 +236,7 @@ elif st.session_state.page_state == "personalized" and "feeling" not in st.sessi
 
 
 elif st.session_state.page_state == "traditional":
+    show_page_intro("Traditional Journaling", "In this mode, you'll receive journaling prompts selected from a question bank. These prompts are tailored to your personality and journaling preferences (like gratitude, stress, personal growth, etc.). It's a structured and consistent way to reflect, perfect for building a habit.")
     user_id = st.session_state.user_id
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
@@ -247,7 +256,8 @@ elif st.session_state.page_state == "traditional":
 
 # === PAGE: EMOTIONAL TRENDS ===
 elif st.session_state.page_state == "trends":
-    st.subheader("📊 Track Your Emotional Trends")
+    show_page_intro("Emotional Trends", "Visualize how your moods and thoughts evolved throughout your sessions.")
+
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
         st.rerun()
