@@ -18,8 +18,6 @@ from emotion_trends import plot_emotion_trends
 # Initialize Firebase
 db = init_firebase()
 
-st.write("🔑", st.secrets["OPENAI_API_KEY"])
-
 # Custom Styling for Chat Display
 st.markdown("""
     <style>
@@ -31,13 +29,13 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
+st.markdown("<h1 class='main-title'>📝 MindPrompt - AI Journaling</h1>", unsafe_allow_html=True)
+st.markdown("<h2 class='sub-title'>Where AI meets self-reflection!</h2>", unsafe_allow_html=True)
+
 def show_page_intro(title, description):
     st.markdown(f"### 📘 {title}")
     st.markdown(f"<div style='color: gray; font-size: 15px;'>{description}</div>", unsafe_allow_html=True)
 
-
-st.markdown("<h1 class='main-title'>📝 MindPrompt - AI Journaling</h1>", unsafe_allow_html=True)
-st.markdown("<h2 class='sub-title'>Where AI meets self-reflection!</h2>", unsafe_allow_html=True)
 
 # Initialize page state
 if "page_state" not in st.session_state:
@@ -108,70 +106,49 @@ if st.session_state.page_state == "home":
 
      # user login           
     elif user_choice == "Returning User":
-        if "login_mode" not in st.session_state:
-            st.session_state.login_mode = "normal"  # can be 'normal' or 'forgot'
+        st.subheader("Log in to Your Account")
+        email = st.text_input("Enter your email:")
+        password = st.text_input("Enter your password:", type="password")
 
-        if st.session_state.login_mode == "normal":
-            st.subheader("Log in to Your Account")
-            email = st.text_input("Enter your email:")
-            password = st.text_input("Enter your password:", type="password")
-
-            col1, col2 = st.columns([1, 1])
-            with col1:
-                if st.button("Log In"):
-                    if email.strip() and password.strip():
-                        users_ref = db.collection("users")
-                        query = users_ref.where("email", "==", email).limit(1).get()
-                        if query:
-                            user_data = query[0].to_dict()
-                            if user_data["password"] == password:
-                                st.session_state.user_id = user_data["user_id"]
-                                st.session_state.name = user_data["name"]
-                                st.session_state.page_state = "mode_selection"
-                                st.success("✅ Logged in successfully!")
-                                st.rerun()
-                            else:
-                                st.error("❌ Incorrect password.")
-                        else:
-                            st.error("❌ Email not found.")
+        if st.button("Log In"):
+            if email.strip() and password.strip():
+                # Fetch user by email
+                users_ref = db.collection("users")
+                query = users_ref.where("email", "==", email).limit(1).get()
+                if query:
+                    user_data = query[0].to_dict()
+                    if user_data["password"] == password:
+                        st.session_state.user_id = user_data["user_id"]
+                        st.session_state.name = user_data["name"]
+                        st.session_state.page_state = "mode_selection"
+                        st.success("✅ Logged in successfully!")
+                        st.rerun()
                     else:
-                        st.warning("⚠️ Please enter your email and password.")
-
-            with col2:
-                if st.button("Forgot Password?"):
-                    st.session_state.login_mode = "forgot"
-                    st.rerun()
-
-        # =============================
-        # PASSWORD RESET FLOW
-        # =============================
-        elif st.session_state.login_mode == "forgot":
-            st.subheader("🔐 Reset Your Password")
-            reset_email = st.text_input("Enter your email to reset password:")
-            
-            if st.button("Send Reset Code"):
-                if reset_email.strip():
-                    reset_code = str(uuid.uuid4())[:8]
-                    st.session_state["reset_code"] = reset_code
-                    st.session_state["reset_email"] = reset_email
-                    
-                    # 🛠️ Set correct page state here!
-                    st.session_state.page_state = "reset_password"
-                    
-                    st.warning(f"A password reset code was generated: **{reset_code}** (this should be emailed)")
-                    st.rerun()
+                        st.error("❌ Incorrect password.")
                 else:
-                    st.warning("⚠️ Please enter your email.")
+                    st.error("❌ Email not found.")
+            else:
+                st.warning("⚠️ Please enter your email and password.")
 
-            if st.button("🔙 Back to Login"):
-                st.session_state.login_mode = "normal"
+        if st.button("Forgot Password?"):
+            if email.strip():
+                # Generate a "reset code" or link (for now just simulate it)
+                reset_code = str(uuid.uuid4())[:8]
+                st.session_state["reset_code"] = reset_code
+                st.session_state["reset_email"] = email
+                st.warning(f"A password reset code was generated: **{reset_code}** (simulate sending via email)")
+
+                st.session_state.page_state = "reset_password"
                 st.rerun()
+            else:
+                st.warning("Please enter your email to reset password.")
 
 
+# === PAGE: PASSWORD RESET ===
 elif st.session_state.page_state == "reset_password":
-    st.subheader("Enter Your Reset Code")
-    code = st.text_input("Reset Code:")
-    new_password = st.text_input("New Password:", type="password")
+    st.subheader("🔐 Reset Your Password")
+    code = st.text_input("Enter the reset code you received:")
+    new_password = st.text_input("Enter new password:", type="password")
 
     if st.button("Reset Password"):
         if code.strip() == st.session_state.get("reset_code", ""):
@@ -181,14 +158,14 @@ elif st.session_state.page_state == "reset_password":
             if query:
                 user_doc = query[0]
                 user_doc.reference.update({"password": new_password})
-                st.success("✅ Password updated successfully! You can now log in.")
-                st.session_state.login_mode = "normal"
+                st.success("✅ Password updated successfully!")
                 st.session_state.page_state = "home"
                 st.rerun()
             else:
-                st.error("❌ User not found.")
+                st.error("User not found.")
         else:
             st.error("❌ Incorrect reset code.")
+
 
 
 
@@ -214,8 +191,7 @@ elif st.session_state.page_state == "mode_selection":
 
 # === PAGE: PERSONALIZED JOURNALING ===
 elif st.session_state.page_state == "personalized" and "feeling" not in st.session_state:
-    show_page_intro("Personalized Journaling", "This mode starts with how you’re feeling today and uses AI to generate follow-up questions in real-time. Each session adapts to your mood, past reflections, and journaling style — helping you dive deeper into your thoughts with personalized guidance.")
-
+    show_page_intro("Personalized Journaling", "Let AI guide your self-reflection based on how you feel.")
 
     user_feeling = st.text_area("How are you feeling today?", key="feeling_input")
     
@@ -238,14 +214,12 @@ elif st.session_state.page_state == "personalized" and "feeling" not in st.sessi
 
 
 elif st.session_state.page_state == "traditional":
-    show_page_intro("Traditional Journaling", "In this mode, you'll receive journaling prompts selected from a question bank. These prompts are tailored to your personality and journaling preferences (like gratitude, stress, personal growth, etc.). It's a structured and consistent way to reflect, perfect for building a habit.")
-    user_id = st.session_state.user_id
+    show_page_intro("Guided Journaling", "Answer structured prompts and track your emotions over time.")
 
+    user_id = st.session_state.user_id
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
         st.rerun()
-
-    # Generate prompt if not available
     if "first_prompt" not in st.session_state:
         first_prompt = generate_first_prompt(user_id)
         st.session_state.first_prompt = first_prompt
@@ -253,48 +227,17 @@ elif st.session_state.page_state == "traditional":
         st.session_state.session_entries.append({"question": first_prompt, "answer": None})
         st.session_state.awaiting_response = "user_journal_entry"
         st.rerun()
-
-    # Show prompt and input
-    st.markdown(f"**{st.session_state.first_prompt}**")
-    journal_entry = st.text_area("Your response:", key="traditional_response")
-
-    col1, col2 = st.columns(2)
-    with col1:
-        if st.button("Submit Answer", key="submit_traditional_answer") and journal_entry.strip():
-            sentiment_score = analyze_sentiment(journal_entry)
-            st.session_state.chat_history.append(("User", journal_entry))
-            st.session_state.session_entries[-1]["answer"] = journal_entry
-            st.session_state.session_entries[-1]["sentiment"] = sentiment_score
-            next_prompt = generate_first_prompt(st.session_state.user_id)
-            st.session_state.chat_history.append(("AI", next_prompt))
-            st.session_state.session_entries.append({"question": next_prompt, "answer": None})
-            st.session_state.first_prompt = next_prompt  # Update to show next prompt
-            st.rerun()
-
-    with col2:
-        if st.button("Submit Answer and End Session", key="end_traditional_session") and journal_entry.strip():
-            sentiment_score = analyze_sentiment(journal_entry)
-            st.session_state.chat_history.append(("User", journal_entry))
-            st.session_state.session_entries[-1]["answer"] = journal_entry
-            st.session_state.session_entries[-1]["sentiment"] = sentiment_score
-            summary = generate_session_summary(st.session_state.session_entries)
-            st.session_state.chat_history.append(("AI", f"📌 **Reflection Summary**: {summary}"))
-            save_journal_entry(st.session_state.user_id, st.session_state.session_entries)
-            st.success("Session saved! 🌟")
-            st.markdown(f"**Reflection Summary:** {summary}")
-            if st.button("Start New Session", key="restart_traditional"):
-                st.session_state.page_state = "mode_selection"
-                st.session_state.chat_history.clear()
-                st.session_state.session_entries.clear()
-                del st.session_state["first_prompt"]
-                st.rerun()
-
+    else:
+        # Show the prompt if it's already stored
+        st.markdown(f"**{st.session_state.first_prompt}**")
+        st.session_state.awaiting_response = "user_journal_entry"
 
 
 # === PAGE: EMOTIONAL TRENDS ===
 elif st.session_state.page_state == "trends":
     show_page_intro("Emotional Trends", "Visualize how your moods and thoughts evolved throughout your sessions.")
 
+    st.subheader("📊 Track Your Emotional Trends")
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
         st.rerun()
@@ -373,41 +316,11 @@ elif st.session_state.page_state == "edit_profile":
 
 
 
-elif st.session_state.page_state == "personalized":
-
-    show_page_intro(
-        "Personalized Journaling",
-        "This mode starts with how you’re feeling today and uses AI to generate follow-up questions in real-time. "
-        "Each session adapts to your mood, past reflections, and journaling style — helping you dive deeper into your thoughts with personalized guidance."
-    )
-
-    if "feeling" not in st.session_state:
-        # Step 1: Ask for initial feeling
-        user_feeling = st.text_area("How are you feeling today?", key="feeling_input")
-
-        col1, col2 = st.columns([1, 1])
-        with col1:
-            if st.button("Submit Feeling", key="submit_feeling") and user_feeling.strip():
-                st.session_state.chat_history.append(("User", user_feeling))
-                followup_prompt = generate_followup_prompt(
-                    st.session_state.user_id, user_feeling, st.session_state.session_entries
-                )
-                st.session_state.chat_history.append(("AI", followup_prompt))
-                st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": user_feeling})
-                st.session_state.session_entries.append({"question": followup_prompt, "answer": None})
-                st.session_state.awaiting_response = "user_journal_entry"
-                st.session_state.feeling = user_feeling  # Now feeling is set
-                st.rerun()
-
-        with col2:
-            if st.button("🔙 Back", key="back_from_personalized"):
-                st.session_state.page_state = "mode_selection"
-                st.rerun()
-
-    else:
-        # Step 2: Journal entry (follow-up to initial feeling)
-        st.markdown("**Your response:**")
-        journal_entry = st.text_area("Write your thoughts here:", key="personalized_response")
+# === JOURNALING RESPONSE ===
+if st.session_state.get("awaiting_response") == "user_journal_entry":
+    
+    if st.session_state.page_state == "personalized":
+        journal_entry = st.text_area("Your response:", key="personalized_response")
 
         col1, col2 = st.columns(2)
         with col1:
@@ -416,8 +329,8 @@ elif st.session_state.page_state == "personalized":
                 st.session_state.chat_history.append(("User", journal_entry))
                 st.session_state.session_entries[-1]["answer"] = journal_entry
                 st.session_state.session_entries[-1]["sentiment"] = sentiment_score
-
-                # Get another follow-up prompt
+                
+                # Generate the next follow-up prompt
                 followup_prompt = generate_followup_prompt(
                     st.session_state.user_id,
                     journal_entry,
@@ -439,10 +352,13 @@ elif st.session_state.page_state == "personalized":
                 st.success("Session saved! 🌟")
                 st.markdown(f"**Reflection Summary:** {summary}")
                 if st.button("Start New Session", key="restart_personalized"):
-                    for key in ["feeling", "first_prompt", "chat_history", "session_entries"]:
-                        st.session_state.pop(key, None)
                     st.session_state.page_state = "mode_selection"
+                    st.session_state.chat_history.clear()
+                    st.session_state.session_entries.clear()
+                    if "first_prompt" in st.session_state:
+                        del st.session_state["first_prompt"]
+                    if "feeling" in st.session_state:
+                        del st.session_state["feeling"]
                     st.rerun()
-
 
 
