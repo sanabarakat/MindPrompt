@@ -318,9 +318,12 @@ elif st.session_state.page_state == "edit_profile":
 
 # === JOURNALING RESPONSE ===
 if st.session_state.get("awaiting_response") == "user_journal_entry":
-    
+
     if st.session_state.page_state == "personalized":
+        latest_prompt = st.session_state.session_entries[-1]["question"]
+        st.markdown(f"**{latest_prompt}**")  # 👈 Show the actual AI-generated prompt
         journal_entry = st.text_area("Your response:", key="personalized_response")
+
 
         col1, col2 = st.columns(2)
         with col1:
