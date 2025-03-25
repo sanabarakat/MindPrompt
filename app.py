@@ -238,9 +238,12 @@ elif st.session_state.page_state == "personalized" and "feeling" not in st.sessi
 elif st.session_state.page_state == "traditional":
     show_page_intro("Traditional Journaling", "In this mode, you'll receive journaling prompts selected from a question bank. These prompts are tailored to your personality and journaling preferences (like gratitude, stress, personal growth, etc.). It's a structured and consistent way to reflect, perfect for building a habit.")
     user_id = st.session_state.user_id
+
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
         st.rerun()
+
+    # Generate prompt if not available
     if "first_prompt" not in st.session_state:
         first_prompt = generate_first_prompt(user_id)
         st.session_state.first_prompt = first_prompt
@@ -248,10 +251,42 @@ elif st.session_state.page_state == "traditional":
         st.session_state.session_entries.append({"question": first_prompt, "answer": None})
         st.session_state.awaiting_response = "user_journal_entry"
         st.rerun()
-    else:
-        # Show the prompt if it's already stored
-        st.markdown(f"**{st.session_state.first_prompt}**")
-        st.session_state.awaiting_response = "user_journal_entry"
+
+    # Show prompt and input
+    st.markdown(f"**{st.session_state.first_prompt}**")
+    journal_entry = st.text_area("Your response:", key="traditional_response")
+
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Submit Answer", key="submit_traditional_answer") and journal_entry.strip():
+            sentiment_score = analyze_sentiment(journal_entry)
+            st.session_state.chat_history.append(("User", journal_entry))
+            st.session_state.session_entries[-1]["answer"] = journal_entry
+            st.session_state.session_entries[-1]["sentiment"] = sentiment_score
+            next_prompt = generate_first_prompt(st.session_state.user_id)
+            st.session_state.chat_history.append(("AI", next_prompt))
+            st.session_state.session_entries.append({"question": next_prompt, "answer": None})
+            st.session_state.first_prompt = next_prompt  # Update to show next prompt
+            st.rerun()
+
+    with col2:
+        if st.button("Submit Answer and End Session", key="end_traditional_session") and journal_entry.strip():
+            sentiment_score = analyze_sentiment(journal_entry)
+            st.session_state.chat_history.append(("User", journal_entry))
+            st.session_state.session_entries[-1]["answer"] = journal_entry
+            st.session_state.session_entries[-1]["sentiment"] = sentiment_score
+            summary = generate_session_summary(st.session_state.session_entries)
+            st.session_state.chat_history.append(("AI", f"📌 **Reflection Summary**: {summary}"))
+            save_journal_entry(st.session_state.user_id, st.session_state.session_entries)
+            st.success("Session saved! 🌟")
+            st.markdown(f"**Reflection Summary:** {summary}")
+            if st.button("Start New Session", key="restart_traditional"):
+                st.session_state.page_state = "mode_selection"
+                st.session_state.chat_history.clear()
+                st.session_state.session_entries.clear()
+                del st.session_state["first_prompt"]
+                st.rerun()
+
 
 
 # === PAGE: EMOTIONAL TRENDS ===
