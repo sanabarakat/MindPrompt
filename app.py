@@ -101,49 +101,66 @@ if st.session_state.page_state == "home":
 
      # user login           
     elif user_choice == "Returning User":
-        st.subheader("Log in to Your Account")
-        email = st.text_input("Enter your email:")
-        password = st.text_input("Enter your password:", type="password")
+        if "login_mode" not in st.session_state:
+            st.session_state.login_mode = "normal"  # can be 'normal' or 'forgot'
 
-        if st.button("Log In"):
-            if email.strip() and password.strip():
-                # Fetch user by email
-                users_ref = db.collection("users")
-                query = users_ref.where("email", "==", email).limit(1).get()
-                if query:
-                    user_data = query[0].to_dict()
-                    if user_data["password"] == password:
-                        st.session_state.user_id = user_data["user_id"]
-                        st.session_state.name = user_data["name"]
-                        st.session_state.page_state = "mode_selection"
-                        st.success("✅ Logged in successfully!")
-                        st.rerun()
+        if st.session_state.login_mode == "normal":
+            st.subheader("Log in to Your Account")
+            email = st.text_input("Enter your email:")
+            password = st.text_input("Enter your password:", type="password")
+
+            col1, col2 = st.columns([1, 1])
+            with col1:
+                if st.button("Log In"):
+                    if email.strip() and password.strip():
+                        users_ref = db.collection("users")
+                        query = users_ref.where("email", "==", email).limit(1).get()
+                        if query:
+                            user_data = query[0].to_dict()
+                            if user_data["password"] == password:
+                                st.session_state.user_id = user_data["user_id"]
+                                st.session_state.name = user_data["name"]
+                                st.session_state.page_state = "mode_selection"
+                                st.success("✅ Logged in successfully!")
+                                st.rerun()
+                            else:
+                                st.error("❌ Incorrect password.")
+                        else:
+                            st.error("❌ Email not found.")
                     else:
-                        st.error("❌ Incorrect password.")
+                        st.warning("⚠️ Please enter your email and password.")
+
+            with col2:
+                if st.button("Forgot Password?"):
+                    st.session_state.login_mode = "forgot"
+                    st.rerun()
+
+        # =============================
+        # PASSWORD RESET FLOW
+        # =============================
+        elif st.session_state.login_mode == "forgot":
+            st.subheader("🔐 Reset Your Password")
+            reset_email = st.text_input("Enter your email to reset password:")
+            if st.button("Send Reset Code"):
+                if reset_email.strip():
+                    reset_code = str(uuid.uuid4())[:8]
+                    st.session_state["reset_code"] = reset_code
+                    st.session_state["reset_email"] = reset_email
+                    st.warning(f"A password reset code was generated: **{reset_code}** (in production, you'd email it!)")
+                    st.session_state.page_state = "reset_password"
+                    st.rerun()
                 else:
-                    st.error("❌ Email not found.")
-            else:
-                st.warning("⚠️ Please enter your email and password.")
+                    st.warning("⚠️ Please enter your email.")
 
-        if st.button("Forgot Password?"):
-            if email.strip():
-                # Generate a "reset code" or link (for now just simulate it)
-                reset_code = str(uuid.uuid4())[:8]
-                st.session_state["reset_code"] = reset_code
-                st.session_state["reset_email"] = email
-                st.warning(f"A password reset code was generated: **{reset_code}** (simulate sending via email)")
-
-                st.session_state.page_state = "reset_password"
+            if st.button("🔙 Back to Login"):
+                st.session_state.login_mode = "normal"
                 st.rerun()
-            else:
-                st.warning("Please enter your email to reset password.")
 
 
-# === PAGE: PASSWORD RESET ===
 elif st.session_state.page_state == "reset_password":
-    st.subheader("🔐 Reset Your Password")
-    code = st.text_input("Enter the reset code you received:")
-    new_password = st.text_input("Enter new password:", type="password")
+    st.subheader("Enter Your Reset Code")
+    code = st.text_input("Reset Code:")
+    new_password = st.text_input("New Password:", type="password")
 
     if st.button("Reset Password"):
         if code.strip() == st.session_state.get("reset_code", ""):
@@ -153,13 +170,19 @@ elif st.session_state.page_state == "reset_password":
             if query:
                 user_doc = query[0]
                 user_doc.reference.update({"password": new_password})
-                st.success("✅ Password updated successfully!")
+                st.success("✅ Password updated successfully! You can now log in.")
+                st.session_state.login_mode = "normal"
                 st.session_state.page_state = "home"
                 st.rerun()
             else:
-                st.error("User not found.")
+                st.error("❌ User not found.")
         else:
             st.error("❌ Incorrect reset code.")
+
+    if st.button("🔙 Back to Login"):
+        st.session_state.login_mode = "normal"
+        st.rerun()
+
 
 
 
