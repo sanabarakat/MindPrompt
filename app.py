@@ -222,6 +222,9 @@ elif st.session_state.page_state == "traditional":
         st.session_state.session_entries.append({"question": first_prompt, "answer": None})
         st.session_state.awaiting_response = "user_journal_entry"
         st.rerun()
+    else:
+        st.markdown(f"**{st.session_state.first_prompt}**")  # Show question only
+
 
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
