@@ -36,6 +36,11 @@ def show_page_intro(title, description):
     st.markdown(f"### 📘 {title}")
     st.markdown(f"<div style='color: gray; font-size: 15px;'>{description}</div>", unsafe_allow_html=True)
 
+def show_chat():
+    for sender, msg in st.session_state.chat_history:
+        css = "chat-user" if sender == "User" else "chat-ai"
+        st.markdown(f"<div class='chat-container {css}'><strong>{sender}:</strong> {msg}</div>", unsafe_allow_html=True)
+
 
 # Initialize page state
 if "page_state" not in st.session_state:
@@ -167,8 +172,6 @@ elif st.session_state.page_state == "reset_password":
             st.error("❌ Incorrect reset code.")
 
 
-
-
 # === PAGE: MODE SELECTION ===
 elif st.session_state.page_state == "mode_selection":
     st.markdown(f"<h2 class='sub-title'>Welcome, {st.session_state['name']}! 🌟</h2>", unsafe_allow_html=True)
@@ -189,40 +192,95 @@ elif st.session_state.page_state == "mode_selection":
             del st.session_state[key]
         st.rerun()
 
-# === PAGE: PERSONALIZED JOURNALING ===
 elif st.session_state.page_state == "personalized":
     show_page_intro("Personalized Journaling", "Let AI guide your self-reflection based on how you feel.")
 
-    user_id = st.session_state.user_id
-    user_feeling = st.text_area("How are you feeling today?")
-    if st.button("Submit Feeling") and user_feeling.strip():
-        st.session_state.chat_history.append(("User", user_feeling))
-        followup_prompt = generate_followup_prompt(user_id, user_feeling, st.session_state.session_entries)
-        st.session_state.chat_history.append(("AI", followup_prompt))
-        st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": user_feeling})
-        st.session_state.session_entries.append({"question": followup_prompt, "answer": None})
-        st.session_state.awaiting_response = "user_journal_entry"
-        st.rerun()
-    if st.button("🔙 Back"):
-        st.session_state.page_state = "mode_selection"
-        st.rerun()
+    show_chat()
+
+    if "feeling" not in st.session_state:
+        feeling = st.text_area("How are you feeling today?")
+        if st.button("Submit Feeling") and feeling.strip():
+            st.session_state.feeling = feeling
+            st.session_state.chat_history.append(("User", feeling))
+            followup = generate_followup_prompt(st.session_state.user_id, feeling, st.session_state.session_entries)
+            st.session_state.chat_history.append(("AI", followup))
+            st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": feeling})
+            st.session_state.session_entries.append({"question": followup, "answer": None})
+            st.rerun()
+    else:
+        answer = st.text_area("Your response:")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Submit Answer") and answer.strip():
+                sentiment = analyze_sentiment(answer)
+                st.session_state.chat_history.append(("User", answer))
+                st.session_state.session_entries[-1]["answer"] = answer
+                st.session_state.session_entries[-1]["sentiment"] = sentiment
+                next_q = generate_followup_prompt(st.session_state.user_id, answer, st.session_state.session_entries)
+                st.session_state.chat_history.append(("AI", next_q))
+                st.session_state.session_entries.append({"question": next_q, "answer": None})
+                st.rerun()
+
+        with col2:
+            if st.button("Submit Answer and End Session") and answer.strip():
+                sentiment = analyze_sentiment(answer)
+                st.session_state.chat_history.append(("User", answer))
+                st.session_state.session_entries[-1]["answer"] = answer
+                st.session_state.session_entries[-1]["sentiment"] = sentiment
+                summary = generate_session_summary(st.session_state.session_entries)
+                st.session_state.chat_history.append(("AI", f"📌 **Reflection Summary**: {summary}"))
+                save_journal_entry(st.session_state.user_id, st.session_state.session_entries)
+                st.success("Session saved! 🌟")
+                st.markdown(f"**Reflection Summary:** {summary}")
+                if st.button("Start New Session"):
+                    for key in ["chat_history", "session_entries", "first_prompt", "feeling"]:
+                        st.session_state.pop(key, None)
+                    st.session_state.page_state = "mode_selection"
+                    st.rerun()
 
 
 
 elif st.session_state.page_state == "traditional":
     show_page_intro("Guided Journaling", "Answer structured prompts and track your emotions over time.")
 
-    user_id = st.session_state.user_id
+    show_chat()
+
     if "first_prompt" not in st.session_state:
-        first_prompt = generate_first_prompt(user_id)
-        st.session_state.first_prompt = first_prompt
-        st.session_state.chat_history.append(("AI", first_prompt))
-        st.session_state.session_entries.append({"question": first_prompt, "answer": None})
-        st.session_state.awaiting_response = "user_journal_entry"
+        q = generate_first_prompt(st.session_state.user_id)
+        st.session_state.first_prompt = q
+        st.session_state.chat_history.append(("AI", q))
+        st.session_state.session_entries.append({"question": q, "answer": None})
         st.rerun()
-    if st.button("🔙 Back"):
-        st.session_state.page_state = "mode_selection"
-        st.rerun()
+    else:
+        response = st.text_area("Your response:")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Submit Answer") and response.strip():
+                sentiment = analyze_sentiment(response)
+                st.session_state.chat_history.append(("User", response))
+                st.session_state.session_entries[-1]["answer"] = response
+                st.session_state.session_entries[-1]["sentiment"] = sentiment
+                new_q = generate_first_prompt(st.session_state.user_id)
+                st.session_state.chat_history.append(("AI", new_q))
+                st.session_state.session_entries.append({"question": new_q, "answer": None})
+                st.rerun()
+
+        with col2:
+            if st.button("Submit Answer and End Session") and response.strip():
+                sentiment = analyze_sentiment(response)
+                st.session_state.chat_history.append(("User", response))
+                st.session_state.session_entries[-1]["answer"] = response
+                st.session_state.session_entries[-1]["sentiment"] = sentiment
+                summary = generate_session_summary(st.session_state.session_entries)
+                st.session_state.chat_history.append(("AI", f"📌 **Reflection Summary**: {summary}"))
+                save_journal_entry(st.session_state.user_id, st.session_state.session_entries)
+                st.success("Session saved! 🌟")
+                st.markdown(f"**Reflection Summary:** {summary}")
+                if st.button("Start New Session"):
+                    for key in ["chat_history", "session_entries", "first_prompt"]:
+                        st.session_state.pop(key, None)
+                    st.session_state.page_state = "mode_selection"
+                    st.rerun()
 
 
 # === PAGE: EMOTIONAL TRENDS ===
