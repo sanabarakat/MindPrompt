@@ -205,11 +205,13 @@ elif st.session_state.page_state == "personalized":
     show_page_intro("Personalized Journaling", "Let AI guide your self-reflection based on how you feel.")
     if "feeling" not in st.session_state:
         feeling = st.text_area("How are you feeling today?")
+
         if st.button("Submit Feeling") and feeling.strip():
+            sentiment_score = analyze_sentiment(feeling)
             st.session_state.chat_history.append(("User", feeling))
             followup_prompt = generate_followup_prompt(st.session_state.user_id, feeling, st.session_state.session_entries)
             st.session_state.chat_history.append(("AI", followup_prompt))
-            st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": feeling})
+            st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": feeling, "sentiment": sentiment_score})
             st.session_state.session_entries.append({"question": followup_prompt, "answer": None})
             st.session_state.feeling = feeling
             st.session_state.awaiting_response = "user_journal_entry"
