@@ -216,15 +216,14 @@ elif st.session_state.page_state == "personalized":
 elif st.session_state.page_state == "traditional":
     show_page_intro("Traditional Journaling", "Answer thought-provoking questions tailored to your personality.")
     if "first_prompt" not in st.session_state:
-        traditional = st.text_area("Reflect on this prompt....")
+        traditional = st.write("Reflect on this prompt....")
         first_prompt = generate_first_prompt(st.session_state.user_id)
         st.session_state.first_prompt = first_prompt
         st.session_state.chat_history.append(("AI", first_prompt))
         st.session_state.session_entries.append({"question": first_prompt, "answer": None})
         st.session_state.awaiting_response = "user_journal_entry"
         st.rerun()
-    else:
-        st.markdown(f"**{st.session_state.first_prompt}**")  # Show question only
+
 
 
     if st.button("🔙 Back"):
