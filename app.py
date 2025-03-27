@@ -75,13 +75,13 @@ if st.session_state.page_state == "home":
         personality = st.radio("Are you more of an introvert or extrovert?", ["Introvert", "Extrovert"])
         country = st.text_input("Which Country do you live in?")
         hobbies = st.text_area("Enter your hobbies (comma-separated):")
-        journaling_frequency = st.radio("How often do you journal?", ["Daily", "Couple of Days a Week", "Weekly", "Occasionally"])
-        journaling_time = st.radio("What time of day do you prefer to journal?", ["Morning", "Afternoon", "Evening"])
+        journaling_frequency = st.radio("How often do you journal?", ["Daily", "Couple of Days a Week", "Weekly", "Occasionally", "Never"])
+        journaling_time = st.multiselect("What time of day do you prefer to journal?", ["Morning", "Afternoon", "Evening"])
         question_pattern = st.radio("What pattern of journaling prompts do you prefer?", ["Traditional Journaling Questions tailored to your personality", "AI-Generated Personalized Reflections"])
-        question_format = st.selectbox("What category of journaling prompts do you prefer?", ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"])
+        question_format = st.multiselect("What category of journaling prompts do you prefer? (select all that apply)", ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"])
         expression = st.selectbox("How do you usually express yourself?", ["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"])
         stress = st.radio("Do you experience frequent stress or anxiety?", ["Yes", "No", "Sometimes"])
-        stress_reason = st.selectbox("What stresses you out the most?", ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"])
+        stress_reason = st.multiselect("What stresses you out the most? (select all that apply)", ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"])
 
         agree_to_terms = st.checkbox("I agree to the [terms and conditions](https://www.consilium.europa.eu/en/policies/data-protection-regulation/#:~:text=The%20GDPR%20lists%20the%20rights,his%20or%20her%20personal%20data)")
 
