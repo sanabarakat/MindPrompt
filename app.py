@@ -196,7 +196,7 @@ elif st.session_state.page_state == "mode_selection":
         st.rerun()
 
 elif st.session_state.page_state == "personalized":
-    show_page_intro("Personalized Journaling", "Let AI guide your self-reflection based on how you feel.")
+    show_page_intro("Personalized Journaling", "This mode starts with how you’re feeling today and uses AI to generate follow-up questions in real-time. Each session adapts to your mood, past reflections, and journaling style — helping you dive deeper into your thoughts with personalized guidance.")
     if "feeling" not in st.session_state:
         feeling = st.text_area("How are you feeling today?")
         if st.button("Submit Feeling") and feeling.strip():
@@ -221,7 +221,7 @@ elif st.session_state.page_state == "personalized":
 
 
 elif st.session_state.page_state == "traditional":
-    show_page_intro("Traditional Journaling", "Answer thought-provoking questions tailored to your personality.")
+    show_page_intro("Traditional Journaling", "In this mode, you'll receive journaling prompts selected from a question bank. These prompts are tailored to your personality and journaling preferences.")
     if "first_prompt" not in st.session_state:
         traditional = st.write("Reflect on this prompt....")
         first_prompt = generate_first_prompt(st.session_state.user_id)
