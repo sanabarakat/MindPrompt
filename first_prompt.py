@@ -65,6 +65,8 @@ def personalize_prompt(user_id, question, question_format, hobbies):
     - Focused on inner growth, gratitude, or stress relief (as appropriate)
 
     Original question: "{question}"
+
+    give me a short question and only give me the pure question without any other information
     """
 
     try:

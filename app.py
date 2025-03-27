@@ -41,6 +41,12 @@ def show_chat():
         css = "chat-user" if sender == "User" else "chat-ai"
         st.markdown(f"<div class='chat-container {css}'><strong>{sender}:</strong> {msg}</div>", unsafe_allow_html=True)
 
+def reset_to_main_menu():
+    st.session_state.page_state = "mode_selection"
+    for key in ["chat_history", "session_entries", "first_prompt", "feeling", "awaiting_response"]:
+        st.session_state.pop(key, None)
+    st.rerun()
+
 
 # Initialize session state
 if "chat_history" not in st.session_state:
@@ -196,7 +202,7 @@ elif st.session_state.page_state == "mode_selection":
         st.rerun()
 
 elif st.session_state.page_state == "personalized":
-    show_page_intro("Personalized Journaling", "This mode starts with how you’re feeling today and uses AI to generate follow-up questions in real-time. Each session adapts to your mood, past reflections, and journaling style — helping you dive deeper into your thoughts with personalized guidance.")
+    show_page_intro("Personalized Journaling", "Let AI guide your self-reflection based on how you feel.")
     if "feeling" not in st.session_state:
         feeling = st.text_area("How are you feeling today?")
         if st.button("Submit Feeling") and feeling.strip():
@@ -208,20 +214,14 @@ elif st.session_state.page_state == "personalized":
             st.session_state.feeling = feeling
             st.session_state.awaiting_response = "user_journal_entry"
             st.rerun()
-        #back button
-        if st.button("🔙 Back"):
-            st.session_state.page_state = "mode_selection"
-            st.session_state.chat_history.clear()
-            st.session_state.session_entries.clear()
-            if "first_prompt" in st.session_state:
-                del st.session_state["first_prompt"]
-            if "feeling" in st.session_state:
-                del st.session_state["feeling"]
-            st.rerun()
+
+    if st.button("🔙 Back"):
+        reset_to_main_menu()
+
 
 
 elif st.session_state.page_state == "traditional":
-    show_page_intro("Traditional Journaling", "In this mode, you'll receive journaling prompts selected from a question bank. These prompts are tailored to your personality and journaling preferences.")
+    show_page_intro("Traditional Journaling", "Answer thought-provoking questions tailored to your personality.")
     if "first_prompt" not in st.session_state:
         traditional = st.write("Reflect on this prompt....")
         first_prompt = generate_first_prompt(st.session_state.user_id)
@@ -231,17 +231,9 @@ elif st.session_state.page_state == "traditional":
         st.session_state.awaiting_response = "user_journal_entry"
         st.rerun()
 
-
-
     if st.button("🔙 Back"):
-        st.session_state.page_state = "mode_selection"
-        st.session_state.chat_history.clear()
-        st.session_state.session_entries.clear()
-        if "first_prompt" in st.session_state:
-            del st.session_state["first_prompt"]
-        if "feeling" in st.session_state:
-            del st.session_state["feeling"]
-        st.rerun()
+        reset_to_main_menu()
+
 
 
 # === DISPLAY CHAT HISTORY ===
