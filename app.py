@@ -251,6 +251,9 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             st.session_state.session_entries[-1]["answer"] = journal_entry
             st.session_state.session_entries[-1]["sentiment"] = sentiment_score
 
+            st.session_state["journal_input"] = ""
+
+
             if st.session_state.page_state == "traditional":
                 next_prompt = generate_first_prompt(st.session_state.user_id)
             else:
@@ -271,8 +274,10 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             st.session_state.session_entries[-1]["answer"] = journal_entry
             st.session_state.session_entries[-1]["sentiment"] = sentiment_score
 
+            st.session_state["journal_input"] = ""
+
             # Generate summary before saving
-            summary = generate_session_summary(st.session_state["session_entries"], user_id)
+            summary = generate_session_summary(st.session_state["session_entries"], st.session_state["user_id"])
             st.session_state["chat_history"].append(("AI", f"📌 **Reflection Summary**: {summary}"))
 
             # **Save structured session in Firebase**
