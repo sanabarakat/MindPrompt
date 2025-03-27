@@ -211,7 +211,14 @@ elif st.session_state.page_state == "personalized":
         #back button
         if st.button("🔙 Back"):
             st.session_state.page_state = "mode_selection"
+            st.session_state.chat_history.clear()
+            st.session_state.session_entries.clear()
+            if "first_prompt" in st.session_state:
+                del st.session_state["first_prompt"]
+            if "feeling" in st.session_state:
+                del st.session_state["feeling"]
             st.rerun()
+
 
 elif st.session_state.page_state == "traditional":
     show_page_intro("Traditional Journaling", "Answer thought-provoking questions tailored to your personality.")
@@ -228,7 +235,14 @@ elif st.session_state.page_state == "traditional":
 
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
+        st.session_state.chat_history.clear()
+        st.session_state.session_entries.clear()
+        if "first_prompt" in st.session_state:
+            del st.session_state["first_prompt"]
+        if "feeling" in st.session_state:
+            del st.session_state["feeling"]
         st.rerun()
+
 
 # === DISPLAY CHAT HISTORY ===
 if "chat_history" in st.session_state:
@@ -286,7 +300,3 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             # Display summary
             st.success("Session saved! 🌟")
             st.markdown(f"**Reflection Summary:** {summary}")
-
-            if st.button("Start New Session"):
-                st.session_state.clear()
-                st.rerun()
