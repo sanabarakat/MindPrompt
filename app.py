@@ -144,41 +144,6 @@ if st.session_state.page_state == "home":
             else:
                 st.warning("⚠️ Please enter your email and password.")
 
-        if st.button("Forgot Password?"):
-            if email.strip():
-                # Generate a "reset code" or link (for now just simulate it)
-                reset_code = str(uuid.uuid4())[:8]
-                st.session_state["reset_code"] = reset_code
-                st.session_state["reset_email"] = email
-                st.warning(f"A password reset code was generated: **{reset_code}** (simulate sending via email)")
-
-                st.session_state.page_state = "reset_password"
-                st.rerun()
-            else:
-                st.warning("Please enter your email to reset password.")
-
-
-# === PAGE: PASSWORD RESET ===
-elif st.session_state.page_state == "reset_password":
-    st.subheader("🔐 Reset Your Password")
-    code = st.text_input("Enter the reset code you received:")
-    new_password = st.text_input("Enter new password:", type="password")
-
-    if st.button("Reset Password"):
-        if code.strip() == st.session_state.get("reset_code", ""):
-            email = st.session_state.get("reset_email")
-            users_ref = db.collection("users")
-            query = users_ref.where("email", "==", email).limit(1).get()
-            if query:
-                user_doc = query[0]
-                user_doc.reference.update({"password": new_password})
-                st.success("✅ Password updated successfully!")
-                st.session_state.page_state = "home"
-                st.rerun()
-            else:
-                st.error("User not found.")
-        else:
-            st.error("❌ Incorrect reset code.")
 
 
 # === PAGE: MODE SELECTION ===
@@ -253,7 +218,7 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
     col1, col2 = st.columns(2)
 
     with col1:
-        if st.button("Submit Answer") and journal_entry.strip():
+        if st.button("Move to the next Question") and journal_entry.strip():
             sentiment_score = analyze_sentiment(journal_entry)
             st.session_state.chat_history.append(("User", journal_entry))
             st.session_state.session_entries[-1]["answer"] = journal_entry
@@ -294,3 +259,86 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             # Display summary
             st.success("Session saved! 🌟")
             st.markdown(f"**Reflection Summary:** {summary}")
+
+
+
+# === PAGE: EMOTIONAL TRENDS ===
+elif st.session_state.page_state == "trends":
+    st.subheader("📊 Track Your Emotional Trends")
+    if st.button("🔙 Back"):
+        st.session_state.page_state = "mode_selection"
+        st.rerun()
+    time_range = st.selectbox("Select Time Range", ["Last 7 Days", "Last 30 Days", "All Time"])
+    emotional_data = get_latest_journal_entry(st.session_state.user_id)
+    if emotional_data:
+        today = datetime.datetime.now(datetime.timezone.utc)
+        if time_range == "Last 7 Days":
+            start_date = today - datetime.timedelta(days=7)
+        elif time_range == "Last 30 Days":
+            start_date = today - datetime.timedelta(days=30)
+        else:
+            start_date = None
+        if start_date:
+            filtered_data = [entry for entry in emotional_data if "timestamp" in entry and pd.to_datetime(entry["timestamp"], utc=True) >= start_date]
+        else:
+            filtered_data = emotional_data
+        plot_emotion_trends(filtered_data)
+    else:
+        st.warning("No emotional data available. Start journaling to track trends!")
+
+# === PAGE: EDIT PROFILE ===
+elif st.session_state.page_state == "edit_profile":
+    user_id = st.session_state.user_id
+    user_ref = db.collection("users").document(user_id)
+    user_doc = user_ref.get()
+
+    if user_doc.exists:
+        user_data = user_doc.to_dict()
+        st.subheader("Edit Your Profile")
+
+        with st.form("edit_profile_form"):
+            name = st.text_input("Name", value=user_data.get("name", ""))
+            password = st.text_input("Password", type="password", value=user_data.get("password", ""))
+            age = st.number_input("Age", step=1, value=user_data.get("age", 18))
+            gender = st.selectbox("Gender", ["Male", "Female", "Other", "Prefer not to say"], index=["Male", "Female", "Other", "Prefer not to say"].index(user_data.get("gender", "Other")))
+            occupation = st.text_input("Occupation", value=user_data.get("occupation", ""))
+            personality = st.radio("Are you more of an introvert or extrovert?", ["Introvert", "Extrovert"], index=["Introvert", "Extrovert"].index(user_data.get("personality", "Introvert")))
+            hobbies = st.text_area("Hobbies (comma-separated)", value=", ".join(user_data.get("hobbies", [])))
+            journaling_frequency = st.radio("How often do you journal?", ["Daily", "Couple of Days a Week", "Weekly", "Occasionally"], index=["Daily", "Couple of Days a Week", "Weekly", "Occasionally"].index(user_data.get("frequency", "Weekly")))
+            journaling_time = st.radio("Preferred journaling time", ["Morning", "Afternoon", "Evening"], index=["Morning", "Afternoon", "Evening"].index(user_data.get("time", "Morning")))
+            question_pattern = st.radio("Prompt Type", ["Traditional Journaling Questions tailored to your personality", "AI-Generated Personalized Reflections"], index=["Traditional Journaling Questions tailored to your personality", "AI-Generated Personalized Reflections"].index(user_data.get("question_pattern", "Traditional Journaling Questions tailored to your personality")))
+            question_format = st.selectbox("Prompt Category", ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"], index=["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"].index(user_data.get("question_format", "Gratitude")))
+            expression = st.selectbox("How do you express yourself?", ["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"], index=["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"].index(user_data.get("expression", "Writing")))
+            stress = st.radio("Do you experience frequent stress?", ["Yes", "No", "Sometimes"], index=["Yes", "No", "Sometimes"].index(user_data.get("stress", "Sometimes")))
+            stress_reason = st.selectbox("What stresses you most?", ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"], index=["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"].index(user_data.get("stress_reason", "Other")))
+
+            submitted = st.form_submit_button("Update Profile")
+            if submitted:
+                updated_data = {
+                    "name": name,
+                    "age": age,
+                    "gender": gender,
+                    "occupation": occupation,
+                    "personality": personality,
+                    "hobbies": hobbies.split(","),
+                    "frequency": journaling_frequency,
+                    "time": journaling_time,
+                    "question_format": question_format,
+                    "question_pattern": question_pattern,
+                    "expression": expression,
+                    "stress": stress,
+                    "stress_reason": stress_reason,
+                }
+                user_ref.update(updated_data)
+                st.success("✅ Profile updated successfully!")
+                st.session_state.name = name  # Update UI name
+                st.session_state.page_state = "mode_selection"
+                st.rerun()
+    else:
+        st.error("User not found.")
+
+    if st.button("🔙 Back"):
+        st.session_state.page_state = "mode_selection"
+        st.rerun()
+
+ 
