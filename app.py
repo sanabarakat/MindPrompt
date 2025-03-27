@@ -217,7 +217,6 @@ elif st.session_state.page_state == "traditional":
     show_page_intro("Traditional Journaling", "Answer thought-provoking questions tailored to your personality.")
     if "first_prompt" not in st.session_state:
         first_prompt = generate_first_prompt(st.session_state.user_id)
-        st.session_state.first_prompt = first_prompt
         st.session_state.chat_history.append(("AI", first_prompt))
         st.session_state.session_entries.append({"question": first_prompt, "answer": None})
         st.session_state.awaiting_response = "user_journal_entry"
@@ -272,7 +271,7 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             st.session_state.session_entries[-1]["sentiment"] = sentiment_score
 
             # Generate summary before saving
-            summary = generate_session_summary(st.session_state["session_entries"])
+            summary = generate_session_summary(st.session_state["session_entries"], user_id)
             st.session_state["chat_history"].append(("AI", f"📌 **Reflection Summary**: {summary}"))
 
             # **Save structured session in Firebase**
