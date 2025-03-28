@@ -5,6 +5,7 @@ import streamlit as st
 import datetime
 import uuid  
 import pandas as pd
+import bcrypt
 from firebase_config import init_firebase
 from firebase_admin import firestore
 from firebase_admin import auth
@@ -14,6 +15,7 @@ from generate_summary import generate_session_summary
 from sentiment_analysis import analyze_sentiment
 from firebase_utils import get_latest_journal_entry, save_journal_entry
 from emotion_trends import plot_emotion_trends
+
 
 # Initialize Firebase
 db = init_firebase()
@@ -92,11 +94,12 @@ if st.session_state.page_state == "home":
                     st.error("❌ An account with this email already exists.")
                 else:
                     user_id = str(uuid.uuid4())
+                    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
                     user_data = {
                         "user_id": user_id,
                         "name": name,
                         "email": email,
-                        "password": password,
+                        "password": hashed_password,
                         "age": age,
                         "gender": gender,
                         "occupation": occupation,
@@ -126,19 +129,18 @@ if st.session_state.page_state == "home":
 
         if st.button("Log In"):
             if email.strip() and password.strip():
-                # Fetch user by email
-                users_ref = db.collection("users")
-                query = users_ref.where("email", "==", email).limit(1).get()
+                query = db.collection("users").where("email", "==", email).limit(1).get()
                 if query:
                     user_data = query[0].to_dict()
-                    if user_data["password"] == password:
-                        st.session_state.user_id = user_data["user_id"]
-                        st.session_state.name = user_data["name"]
-                        st.session_state.page_state = "mode_selection"
+                    stored_hash = user_data["password"]
+
+                    # Check if the entered password matches the stored hash
+                    if bcrypt.checkpw(password.encode(), stored_hash.encode()):
                         st.success("✅ Logged in successfully!")
-                        st.rerun()
+                        # Set session, redirect, etc.
                     else:
                         st.error("❌ Incorrect password.")
+
                 else:
                     st.error("❌ Email not found.")
             else:
