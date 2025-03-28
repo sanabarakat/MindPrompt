@@ -94,7 +94,7 @@ if st.session_state.page_state == "home":
                     st.error("❌ An account with this email already exists.")
                 else:
                     user_id = str(uuid.uuid4())
-                    hashed_password = bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
+                    hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
                     user_data = {
                         "user_id": user_id,
                         "name": name,
@@ -135,7 +135,7 @@ if st.session_state.page_state == "home":
                     stored_hash = user_data["password"]
 
                     # Check if the entered password matches the stored hash
-                    if bcrypt.checkpw(password.encode(), stored_hash.encode()):
+                    if bcrypt.checkpw(password.encode(), stored_hash.encode('utf-8')):
                         st.success("✅ Logged in successfully!")
                         # Set session, redirect, etc.
                     else:
