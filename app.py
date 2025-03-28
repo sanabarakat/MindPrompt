@@ -136,8 +136,11 @@ if st.session_state.page_state == "home":
 
                     # Check if the entered password matches the stored hash
                     if bcrypt.checkpw(password.encode(), stored_hash.encode('utf-8')):
+                        st.session_state.user_id = user_data["user_id"]
+                        st.session_state.name = user_data["name"]
+                        st.session_state.page_state = "mode_selection"
                         st.success("✅ Logged in successfully!")
-                        # Set session, redirect, etc.
+                        st.rerun()
                     else:
                         st.error("❌ Incorrect password.")
 
