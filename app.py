@@ -149,6 +149,8 @@ if st.session_state.page_state == "home":
 # === PAGE: MODE SELECTION ===
 elif st.session_state.page_state == "mode_selection":
     st.markdown(f"<h2 class='sub-title'>Welcome, {st.session_state['name']}! 🌟</h2>", unsafe_allow_html=True)
+    st.write("Did you know? Journaling for just a few minutes a day can improve your mental clarity, emotional well-being, and self-awareness. Whether you're processing your thoughts, managing stress, or celebrating moments of gratitude — this space is yours. There’s no right or wrong way to begin, just start where you are.")
+    st.write("What would you like to do today?")
     if st.button("🌿 Guided Journaling (Traditional)"):
         st.session_state.page_state = "traditional"
         st.rerun()
