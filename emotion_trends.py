@@ -6,7 +6,37 @@ from wordcloud import WordCloud
 
 import nltk
 from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+import string
+import re
+
 nltk.download("stopwords")
+nltk.download("wordnet")
+nltk.download("omw-1.4")
+
+# Initialize tools
+stop_words = set(stopwords.words("english"))
+custom_stopwords = {
+    "even", "really", "always", "just", "like", "don’t", "one", "also", "something", 
+    "get", "got", "thing", "things", "make", "makes", "much", "many", "could", "would"
+}
+all_stopwords = stop_words.union(custom_stopwords)
+lemmatizer = WordNetLemmatizer()
+
+def preprocess_text(text):
+    # Lowercase
+    text = text.lower()
+    # Remove punctuation and numbers
+    text = re.sub(r"[^\w\s]", "", text)
+    text = re.sub(r"\d+", "", text)
+    # Tokenize and clean
+    tokens = text.split()
+    cleaned_tokens = [
+        lemmatizer.lemmatize(token)
+        for token in tokens
+        if token not in all_stopwords and len(token) > 2  # Remove short/meaningless words
+    ]
+    return " ".join(cleaned_tokens)
 
 def plot_emotion_trends(emotional_data):
     """Generate multiple insightful visualizations based on user journaling data."""
@@ -49,9 +79,9 @@ def plot_emotion_trends(emotional_data):
 
     all_text = " ".join(entry["answer"] for entry in emotional_data if "answer" in entry)
 
-    # Remove stopwords
-    stop_words = set(stopwords.words("english"))
-    all_text = " ".join(word for word in all_text.split() if word.lower() not in stop_words)
+    all_text_raw = " ".join(entry["answer"] for entry in emotional_data if "answer" in entry)
+    all_text = preprocess_text(all_text_raw)
+
 
 
 
