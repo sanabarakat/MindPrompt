@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 from wordcloud import WordCloud
+import stopwords
 
 def plot_emotion_trends(emotional_data):
     """Generate multiple insightful visualizations based on user journaling data."""
@@ -44,6 +45,12 @@ def plot_emotion_trends(emotional_data):
     st.subheader("☁️ Most Frequent Words in Journal Entries")
 
     all_text = " ".join(entry["answer"] for entry in emotional_data if "answer" in entry)
+
+    # Remove stopwords
+    stop_words = set(stopwords.words("english"))
+    all_text = " ".join(word for word in all_text.split() if word.lower() not in stop_words)
+
+
 
     if all_text:
         wordcloud = WordCloud(
