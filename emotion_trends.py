@@ -3,7 +3,10 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 from wordcloud import WordCloud
-import stopwords
+
+import nltk
+from nltk.corpus import stopwords
+nltk.download("stopwords")
 
 def plot_emotion_trends(emotional_data):
     """Generate multiple insightful visualizations based on user journaling data."""
