@@ -18,7 +18,7 @@ nltk.download("omw-1.4")
 stop_words = set(stopwords.words("english"))
 custom_stopwords = {
     "even", "really", "always", "just", "like", "don’t", "one", "also", "something", 
-    "get", "got", "thing", "things", "make", "makes", "much", "many", "could", "would"
+    "get", "got", "thing", "things", "make", "makes", "much", "many", "could", "would", "without", "bit", "way", "lot", "see", "say", "said", "go", "going"
 }
 all_stopwords = stop_words.union(custom_stopwords)
 lemmatizer = WordNetLemmatizer()
