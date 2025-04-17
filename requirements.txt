@@ -9,4 +9,4 @@ matplotlib
 seaborn
 wordcloud
 bcrypt
-stopwords
+nltk
