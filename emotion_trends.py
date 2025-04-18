@@ -69,8 +69,6 @@ def plot_emotion_trends(emotional_data):
     df["emotion_list"] = df["sentiment"].apply(lambda s: s.get("top_3_emotions", [s.get("dominant_emotion")]) if isinstance(s, dict) else [])
     df["dominant_emotion"] = df["emotion_list"].apply(lambda x: x[0] if x else "neutral")
 
-
-
     # run topic pipeline on each answer (cache if you like)
     topics = []
     for txt in df["answer"]:
@@ -88,7 +86,7 @@ def plot_emotion_trends(emotional_data):
         wc = WordCloud(
             width=800, height=400,
             background_color="#1E1E1E",
-            colormap="cool",
+            colormap="Purples",
             contour_color="white",
             contour_width=1,
             max_words=100
@@ -114,14 +112,12 @@ def plot_emotion_trends(emotional_data):
     st.pyplot(plt)
 
 
-
-
     # —               📊 Topic Distribution —     —
     st.subheader("📊 Topic Distribution")
     top_counts = df["dominant_topic"].value_counts()
     plt.figure(figsize=(6,6))
     plt.pie(top_counts, labels=top_counts.index, autopct="%1.1f%%",
-            colors=sns.color_palette("bright"))
+            colors=sns.color_palette("pastel"))
     plt.title("Journal Topics")
     st.pyplot(plt)
 
@@ -140,7 +136,7 @@ def plot_emotion_trends(emotional_data):
     df["date"] = df["timestamp"].dt.date
     counts = df["date"].value_counts().sort_index()
     plt.figure(figsize=(12,6))
-    sns.barplot(x=counts.index, y=counts.values, color="skyblue")
+    sns.barplot(x=counts.index, y=counts.values, color="pastel")
     plt.xticks(rotation=45)
     plt.title("Entries per Day")
     st.pyplot(plt)
@@ -152,6 +148,6 @@ def plot_emotion_trends(emotional_data):
     weekly = weekly.reindex(weekday_order).fillna(0)
     st.subheader("📅 Weekly Emotion Patterns")
     plt.figure(figsize=(12,6))
-    weekly.plot(kind="bar", stacked=True, ax=plt.gca(), colormap="coolwarm", alpha=0.8)
+    weekly.plot(kind="bar", stacked=True, ax=plt.gca(), colormap="pastel", alpha=0.8)
     plt.xticks(rotation=45)
     st.pyplot(plt)
