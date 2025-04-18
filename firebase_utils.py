@@ -71,7 +71,7 @@ def save_journal_entry(user_id, session_entries):
             structured_data["entries"].append({
                 "question": entry.get("question", ""),
                 "answer": entry.get("answer", ""),
-                "sentiment": entry.get("sentiment", "")  # Ensure sentiment is stored
+                "sentiment": entry.get("sentiment", {})  # Ensure sentiment is stored
             })
 
         db.collection("journals").add(structured_data)

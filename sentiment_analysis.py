@@ -35,7 +35,7 @@ import torch
 
 # ─────────────── Configuration ───────────────
 # Replace with your actual HF repo ID:
-HF_MODEL_ID = "sanabar/roberta-goemo-journals"
+HF_MODEL_ID = "sanabar/roberta-goemo-journal-adapted"
 
 # pick device
 DEVICE = 0 if torch.cuda.is_available() else -1
@@ -64,31 +64,24 @@ sentiment_pipeline = pipeline(
     device=DEVICE,
 )
 
-def analyze_sentiment(text: str, top_k: int = 3) -> dict:
+def analyze_sentiment(text: str) -> dict:
     """
-    Analyze `text` and return the top_k emotions plus their scores.
-    Returns:
+    Analyze `text` and return:
       {
-        "top_emotions": [ (label1, score1), (label2, score2), ... ],
-        "all_scores":   { label: score, ... }
+        "dominant_emotion": str,
+        "emotion_scores" : { label_str: float_score, ... }
       }
     """
-    # Run the pipeline
+    # pipeline returns List[List[{"label":..,"score":..}]]
     scores = sentiment_pipeline(text)[0]
-
-    # Build a dict for easy lookup
-    all_scores = {d["label"]: float(d["score"]) for d in scores}
-
-    # Sort labels by descending score and take the first top_k
-    top_emotions = sorted(all_scores.items(),
-                          key=lambda kv: kv[1],
-                          reverse=True)[:top_k]
-
+    # convert to dict
+    emotion_scores = {d["label"]: float(d["score"]) for d in scores}
+    # pick the max
+    dominant_emotion = max(emotion_scores, key=emotion_scores.get)
     return {
-        "top_emotions": top_emotions,
-        "all_scores": all_scores,
+        "dominant_emotion": dominant_emotion,
+        "emotion_scores": emotion_scores,
     }
-
 
 # ─────────────── Quick smoke test ───────────────
 if __name__ == "__main__":
@@ -100,4 +93,3 @@ if __name__ == "__main__":
         out["emotion_scores"].items(), key=lambda kv: kv[1], reverse=True
     )[:5]:
         print(f"  {label:12} {score:.3f}")
-
