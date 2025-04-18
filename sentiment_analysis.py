@@ -35,7 +35,7 @@ import torch
 
 # ─────────────── Configuration ───────────────
 # Replace with your actual HF repo ID:
-HF_MODEL_ID = "sanabar/roberta-goemo-journal-adapted"
+HF_MODEL_ID = "sanabar/roberta-goemo-journals"
 
 # pick device
 DEVICE = 0 if torch.cuda.is_available() else -1
