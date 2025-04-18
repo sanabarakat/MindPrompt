@@ -138,7 +138,7 @@ def plot_emotion_trends(emotional_data):
     df["date"] = df["timestamp"].dt.date
     counts = df["date"].value_counts().sort_index()
     plt.figure(figsize=(12,6))
-    sns.barplot(x=counts.index, y=counts.values, color="pastel")
+    sns.barplot(x=counts.index, y=counts.values, color="skyblue")
     plt.xticks(rotation=45)
     plt.title("Entries per Day")
     st.pyplot(plt)
@@ -150,6 +150,6 @@ def plot_emotion_trends(emotional_data):
     weekly = weekly.reindex(weekday_order).fillna(0)
     st.subheader("📅 Weekly Emotion Patterns")
     plt.figure(figsize=(12,6))
-    weekly.plot(kind="bar", stacked=True, ax=plt.gca(), colormap="pastel", alpha=0.8)
+    weekly.plot(kind="bar", stacked=True, ax=plt.gca(), colormap="lightcoral", alpha=0.8)
     plt.xticks(rotation=45)
     st.pyplot(plt)
