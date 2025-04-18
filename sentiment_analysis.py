@@ -25,52 +25,72 @@
 #     print(f"Detected Emotion: {sentiment['dominant_emotion']}")
 #     print(f"Emotion Scores: {sentiment['emotion_scores']}")
 
-from transformers import pipeline
+# sentiment_analysis.py
+from transformers import (
+    AutoTokenizer,
+    AutoModelForSequenceClassification,
+    pipeline,
+)
+import torch
 
-# ──────────────── Configuration ────────────────
-# Replace with your actual Hub repo ID
-HF_MODEL_ID = "sanabar/roberta-goemo-journal-adapted"
+# ─────────────── Configuration ───────────────
+# Replace with your actual HF repo ID:
+HF_MODEL_ID = "sanabar/roberta-goemo-journals"
 
-# ─────────────── Load the fine‑tuned model ───────────────
-# multi‑label head uses sigmoid; return_all_scores gives all 28 emotions
+# pick device
+DEVICE = 0 if torch.cuda.is_available() else -1
+
+# ─────────────── Load tokenizer & model ───────────────
+print(f"🔍 Loading tokenizer (slow) from: {HF_MODEL_ID}")
+tok = AutoTokenizer.from_pretrained(
+    HF_MODEL_ID,
+    use_fast=False,            # force the pure‑Python tokenizer
+    local_files_only=False,    # allow Hub download
+)
+
+print(f"🔍 Loading model           from: {HF_MODEL_ID}")
+model = AutoModelForSequenceClassification.from_pretrained(
+    HF_MODEL_ID,
+    local_files_only=False,
+)
+
+# ─────────────── Build pipeline ───────────────
 sentiment_pipeline = pipeline(
     "text-classification",
-    model=HF_MODEL_ID,
+    model=model,
+    tokenizer=tok,
     function_to_apply="sigmoid",
     return_all_scores=True,
-    framework="pt",
+    device=DEVICE,
 )
 
 def analyze_sentiment(text: str) -> dict:
     """
-    Analyze sentiment/emotion of `text` using the fine‑tuned GoEmotions‑journal model.
-
-    Returns:
+    Analyze `text` and return:
       {
-        "dominant_emotion": <label str>,
-        "emotion_scores" : { label_str: float_score, … }
+        "dominant_emotion": str,
+        "emotion_scores" : { label_str: float_score, ... }
       }
     """
-    # pipeline returns a list of lists (one inner list per input string)
+    # pipeline returns List[List[{"label":..,"score":..}]]
     scores = sentiment_pipeline(text)[0]
-
-    # convert to {label: score}
+    # convert to dict
     emotion_scores = {d["label"]: float(d["score"]) for d in scores}
-
-    # pick the highest‑scoring emotion
+    # pick the max
     dominant_emotion = max(emotion_scores, key=emotion_scores.get)
-
     return {
         "dominant_emotion": dominant_emotion,
         "emotion_scores": emotion_scores,
     }
 
-
-# ─────────────── Quick smoke‑test ───────────────
+# ─────────────── Quick smoke test ───────────────
 if __name__ == "__main__":
-    sample = "I'm feeling really happy and grateful today!"
+    sample = "I felt oddly calm but still a bit worried about tomorrow."
     out = analyze_sentiment(sample)
     print("Detected Emotion :", out["dominant_emotion"])
     print("Top 5 Emotions   :")
-    for label, score in sorted(out["emotion_scores"].items(), key=lambda kv: kv[1], reverse=True)[:5]:
+    for label, score in sorted(
+        out["emotion_scores"].items(), key=lambda kv: kv[1], reverse=True
+    )[:5]:
         print(f"  {label:12} {score:.3f}")
+
