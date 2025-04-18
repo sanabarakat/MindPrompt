@@ -150,6 +150,6 @@ def plot_emotion_trends(emotional_data):
     weekly = weekly.reindex(weekday_order).fillna(0)
     st.subheader("📅 Weekly Emotion Patterns")
     plt.figure(figsize=(12,6))
-    weekly.plot(kind="bar", stacked=True, ax=plt.gca(), colormap="lightcoral", alpha=0.8)
+    weekly.plot(kind="bar", stacked=True, ax=plt.gca(), colormap="coolwarm", alpha=0.8)
     plt.xticks(rotation=45)
     st.pyplot(plt)
