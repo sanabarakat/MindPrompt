@@ -18,7 +18,7 @@ stop_words = set(stopwords.words("english"))
 custom_stopwords = {
     "even","really","always","just","like","don’t","one","also","something",
     "get","got","thing","things","make","makes","much","many","could","would",
-    "without","bit","way","lot","see","say","said","go","going"
+    "without","bit","way","lot","see","say","said","go","going", "seems", "hand", "rather", "ive"
 }
 all_stopwords = stop_words.union(custom_stopwords)
 lemmatizer = WordNetLemmatizer()
