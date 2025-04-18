@@ -3,158 +3,146 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import streamlit as st
 from wordcloud import WordCloud
-
+from transformers import pipeline
 import nltk
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-import string
 import re
 
+# —                     Setup NLTK                ————
 nltk.download("stopwords")
 nltk.download("wordnet")
 nltk.download("omw-1.4")
 
-# Initialize tools
 stop_words = set(stopwords.words("english"))
 custom_stopwords = {
-    "even", "really", "always", "just", "like", "don’t", "one", "also", "something", 
-    "get", "got", "thing", "things", "make", "makes", "much", "many", "could", "would", "without", "bit", "way", "lot", "see", "say", "said", "go", "going"
+    "even","really","always","just","like","don’t","one","also","something",
+    "get","got","thing","things","make","makes","much","many","could","would",
+    "without","bit","way","lot","see","say","said","go","going"
 }
 all_stopwords = stop_words.union(custom_stopwords)
 lemmatizer = WordNetLemmatizer()
 
 def preprocess_text(text):
-    # Lowercase
     text = text.lower()
-    # Remove punctuation and numbers
     text = re.sub(r"[^\w\s]", "", text)
     text = re.sub(r"\d+", "", text)
-    # Tokenize and clean
     tokens = text.split()
-    cleaned_tokens = [
-        lemmatizer.lemmatize(token)
-        for token in tokens
-        if token not in all_stopwords and len(token) > 2  # Remove short/meaningless words
+    cleaned = [
+        lemmatizer.lemmatize(t)
+        for t in tokens
+        if t not in all_stopwords and len(t)>2
     ]
-    return " ".join(cleaned_tokens)
+    return " ".join(cleaned)
+
+# —                    Load your topic model              ————
+topic_pipeline = pipeline(
+    "text-classification",
+    model="sanabar/roberta-topic-head",  # <-- replace with your HF repo
+    function_to_apply="sigmoid",
+    return_all_scores=True,
+    top_k=None,
+    framework="pt"
+)
 
 def plot_emotion_trends(emotional_data):
-    """Generate multiple insightful visualizations based on user journaling data."""
-
-    if not emotional_data or len(emotional_data) == 0:
-        st.warning("⚠️ No emotional data available. Start journaling to track trends!")
+    if not emotional_data:
+        st.warning("⚠️ No emotional data available.")
         return
 
-    # Convert to DataFrame
     df = pd.DataFrame(emotional_data)
-
-    # ✅ **Ensure timestamp exists**
     if "timestamp" not in df.columns:
-        st.warning("⚠️ No timestamp found in journal entries.")
+        st.warning("⚠️ Missing timestamps.")
         return
 
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
-
     if df["timestamp"].isna().all():
-        st.warning("⚠️ All timestamps are invalid. Check Firestore data.")
+        st.warning("⚠️ Invalid timestamps.")
         return
 
-    # ✅ **Ensure sentiment exists**
-    if "sentiment" not in df.columns:
-        st.warning("⚠️ No sentiment data found in journal entries.")
+    if "answer" not in df.columns or "sentiment" not in df.columns:
+        st.warning("⚠️ Missing answers or sentiment.")
         return
 
-    # Extract dominant emotion
-    df["dominant_emotion"] = df["sentiment"].apply(lambda x: x.get("dominant_emotion", "neutral") if isinstance(x, dict) else "neutral")
+    # —                    Get emotions & topics —            —
+    # dominant_emotion already applies via sentiment_analysis
+    df["dominant_emotion"] = df["sentiment"].apply(
+        lambda x: x.get("dominant_emotion","neutral") if isinstance(x,dict) else "neutral"
+    )
 
-    # Extract individual emotion scores
-    df["joy"] = df["sentiment"].apply(lambda x: x["emotion_scores"].get("joy", 0) if isinstance(x, dict) else 0)
-    df["sadness"] = df["sentiment"].apply(lambda x: x["emotion_scores"].get("sadness", 0) if isinstance(x, dict) else 0)
-    df["anger"] = df["sentiment"].apply(lambda x: x["emotion_scores"].get("anger", 0) if isinstance(x, dict) else 0)
-    df["neutral"] = df["sentiment"].apply(lambda x: x["emotion_scores"].get("neutral", 0) if isinstance(x, dict) else 0)
-    df["surprise"] = df["sentiment"].apply(lambda x: x["emotion_scores"].get("surprise", 0) if isinstance(x, dict) else 0)
+    # run topic pipeline on each answer (cache if you like)
+    topics = []
+    for txt in df["answer"]:
+        # pipeline returns list of dicts [{label:,score:},…]
+        scores = topic_pipeline(txt)[0]
+        top = max(scores, key=lambda d: d["score"])["label"]
+        topics.append(top)
+    df["dominant_topic"] = topics
 
-    # **Word Cloud for Most Used Words**
+    # —                 Word Cloud —            ————
     st.subheader("☁️ Most Frequent Words in Journal Entries")
-
-    all_text = " ".join(entry["answer"] for entry in emotional_data if "answer" in entry)
-
-    all_text_raw = " ".join(entry["answer"] for entry in emotional_data if "answer" in entry)
-    all_text = preprocess_text(all_text_raw)
-
-
-
-
-    if all_text:
-        wordcloud = WordCloud(
-            width=800, 
-            height=400, 
-            background_color="#1E1E1E",  # Dark background
-            colormap="cool",  # Use a cool tone for words
-            contour_color="white",  # White outline for clarity
-            contour_width=1,  # Slight outline
-            max_words=100,
-            font_path=None,  # Optional: You can specify a font file path for more styling
-        ).generate(all_text)
-
-        plt.figure(figsize=(10, 5), facecolor="#1E1E1E")  # Match Streamlit's dark mode
-        plt.imshow(wordcloud, interpolation="bilinear")
-        plt.axis("off")  # Remove grid lines
-        plt.tight_layout(pad=0)
+    all_text = " ".join(df["answer"].tolist())
+    cleaned = preprocess_text(all_text)
+    if cleaned:
+        wc = WordCloud(
+            width=800, height=400,
+            background_color="#1E1E1E",
+            colormap="cool",
+            contour_color="white",
+            contour_width=1,
+            max_words=100
+        ).generate(cleaned)
+        plt.figure(figsize=(10,5),facecolor="#1E1E1E")
+        plt.imshow(wc, interpolation="bilinear")
+        plt.axis("off")
         st.pyplot(plt)
     else:
-        st.warning("⚠️ Not enough journal entries to generate a word cloud.")
+        st.warning("⚠️ Not enough text for word cloud.")
 
-    # **Sentiment Distribution Pie Chart**
-    st.subheader("📊 Sentiment Distribution")
-    emotion_counts = df["dominant_emotion"].value_counts()
-
-    plt.figure(figsize=(6, 6))
-    plt.pie(emotion_counts, labels=emotion_counts.index, autopct="%1.1f%%", colors=sns.color_palette("pastel"))
-    plt.title("Proportion of Different Emotions in Journal Entries")
+    # —               📊 Emotion Distribution —       —
+    st.subheader("📊 Emotion Distribution")
+    emo_counts = df["dominant_emotion"].value_counts()
+    plt.figure(figsize=(6,6))
+    plt.pie(emo_counts, labels=emo_counts.index, autopct="%1.1f%%",
+            colors=sns.color_palette("pastel"))
+    plt.title("Emotions")
     st.pyplot(plt)
 
-    # **Journaling Frequency Over Time**
+    # —               📊 Topic Distribution —     —
+    st.subheader("📊 Topic Distribution")
+    top_counts = df["dominant_topic"].value_counts()
+    plt.figure(figsize=(6,6))
+    plt.pie(top_counts, labels=top_counts.index, autopct="%1.1f%%",
+            colors=sns.color_palette("bright"))
+    plt.title("Journal Topics")
+    st.pyplot(plt)
+
+    # —               🗂️ Emotion × Topic Heatmap —    —
+    st.subheader("💡 Emotion × Topic Co‑occurrence")
+    cross = pd.crosstab(df["dominant_topic"], df["dominant_emotion"])
+    plt.figure(figsize=(10,6))
+    sns.heatmap(cross, annot=True, fmt="d", cmap="YlGnBu")
+    plt.xlabel("Emotion")
+    plt.ylabel("Topic")
+    st.pyplot(plt)
+
+    # —               🕒 Journaling Frequency —     —
     st.subheader("🕒 Journaling Frequency Over Time")
     df["date"] = df["timestamp"].dt.date
-    journal_counts = df["date"].value_counts().sort_index()
-
-    plt.figure(figsize=(12, 6))
-    sns.barplot(x=journal_counts.index, y=journal_counts.values, color="blue")
+    counts = df["date"].value_counts().sort_index()
+    plt.figure(figsize=(12,6))
+    sns.barplot(x=counts.index, y=counts.values, color="skyblue")
     plt.xticks(rotation=45)
-    plt.xlabel("Date")
-    plt.ylabel("Number of Journal Entries")
-    plt.title("User Journaling Frequency Over Time")
+    plt.title("Entries per Day")
     st.pyplot(plt)
 
-    plot_weekly_emotion_trends(df)
-
-
-def plot_weekly_emotion_trends(df):
-    """Generates a bar chart showing dominant emotions by day of the week."""
-
-    # Ensure timestamp and dominant emotion exist
-    if "timestamp" not in df.columns or "dominant_emotion" not in df.columns:
-        st.warning("⚠️ Not enough data to generate a weekly emotion trend.")
-        return
-
-    # Extract day of the week (0 = Monday, 6 = Sunday)
+    # —               📅 Weekly Patterns —     —
     df["day_of_week"] = df["timestamp"].dt.day_name()
-
-    # Count dominant emotions per day
-    emotion_counts = df.groupby("day_of_week")["dominant_emotion"].value_counts().unstack().fillna(0)
-
-    # Sort by actual weekday order
-    weekday_order = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    emotion_counts = emotion_counts.reindex(weekday_order)
-
-    # Plot the emotion distribution per day
+    weekly = pd.crosstab(df["day_of_week"], df["dominant_emotion"])
+    weekday_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
+    weekly = weekly.reindex(weekday_order).fillna(0)
     st.subheader("📅 Weekly Emotion Patterns")
-    plt.figure(figsize=(12, 6))
-    emotion_counts.plot(kind="bar", stacked=True, colormap="coolwarm", alpha=0.85)
-    plt.xlabel("Day of the Week")
-    plt.ylabel("Number of Entries")
-    plt.title("Dominant Emotions by Day of the Week")
-    plt.legend(title="Emotion", bbox_to_anchor=(1.05, 1), loc="upper left")
+    plt.figure(figsize=(12,6))
+    weekly.plot(kind="bar", stacked=True, ax=plt.gca(), colormap="coolwarm", alpha=0.8)
     plt.xticks(rotation=45)
     st.pyplot(plt)
