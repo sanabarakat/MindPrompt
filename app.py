@@ -257,7 +257,7 @@ elif st.session_state.page_state == "personalized":
         feeling = st.text_area("How are you feeling today?")
 
         if st.button("Submit Feeling") and feeling.strip():
-            sentiment_score = analyze_sentiment(feeling)
+            sentiment_score = analyze_sentiment(feeling, top_k=3)
             st.session_state.chat_history.append(("User", feeling))
             followup_prompt = generate_followup_prompt(st.session_state.user_id, feeling, st.session_state.session_entries)
             st.session_state.chat_history.append(("AI", followup_prompt))
@@ -304,7 +304,7 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
 
     with col1:
         if st.button("Move to the next Question") and journal_entry.strip():
-            sentiment_score = analyze_sentiment(journal_entry)
+            sentiment_score = analyze_sentiment(journal_entry, top_k=3)
             st.session_state.chat_history.append(("User", journal_entry))
             st.session_state.session_entries[-1]["answer"] = journal_entry
             st.session_state.session_entries[-1]["sentiment"] = sentiment_score
@@ -327,7 +327,7 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
 
     with col2:
         if st.button("Submit Answer and End Session") and journal_entry.strip():
-            sentiment_score = analyze_sentiment(journal_entry)
+            sentiment_score = analyze_sentiment(journal_entry, top_k=3)
             st.session_state.chat_history.append(("User", journal_entry))
             st.session_state.session_entries[-1]["answer"] = journal_entry
             st.session_state.session_entries[-1]["sentiment"] = sentiment_score
