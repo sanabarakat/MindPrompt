@@ -66,7 +66,7 @@ def plot_emotion_trends(emotional_data):
         return
 
     # —                    Get emotions & topics —            —
-    df["emotion_list"] = df["sentiment"].apply(lambda s: s.get("top_3_emotions", []) if isinstance(s, dict) else [])
+    df["emotion_list"] = df["sentiment"].apply(lambda s: s.get("top_3_emotions", [s.get("dominant_emotion")]) if isinstance(s, dict) else [])
     df["dominant_emotion"] = df["emotion_list"].apply(lambda x: x[0] if x else "neutral")
 
 
@@ -103,13 +103,18 @@ def plot_emotion_trends(emotional_data):
     # —               📊 Emotion Distribution —       —
     st.subheader("📊 Emotion Distribution")
     emotion_df = df.explode("emotion_list")
-    emo_counts = emotion_df["emotion_list"].value_counts()    
+    emo_counts = emotion_df["emotion_list"].value_counts() 
+    if len(emo_counts) > 8:
+        plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))   
     
     plt.figure(figsize=(6,6))
     plt.pie(emo_counts, labels=emo_counts.index, autopct="%1.1f%%",
             colors=sns.color_palette("pastel"))
     plt.title("Emotions")
     st.pyplot(plt)
+
+
+
 
     # —               📊 Topic Distribution —     —
     st.subheader("📊 Topic Distribution")
