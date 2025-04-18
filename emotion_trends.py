@@ -45,6 +45,8 @@ topic_pipeline = pipeline(
     framework="pt"
 )
 
+color_palette = sns.color_palette("pastel")[:10]  # You can use up to 10 consistent soft colors
+
 def plot_emotion_trends(emotional_data):
     if not emotional_data:
         st.warning("⚠️ No emotional data available.")
@@ -87,7 +89,7 @@ def plot_emotion_trends(emotional_data):
             width=800, height=400,
             background_color="#1E1E1E",
             colormap="Purples",
-            contour_color="white",
+            contour_color="black",
             contour_width=1,
             max_words=100
         ).generate(cleaned)
@@ -106,8 +108,8 @@ def plot_emotion_trends(emotional_data):
         plt.legend(loc="center left", bbox_to_anchor=(1, 0.5))   
     
     plt.figure(figsize=(6,6))
-    plt.pie(emo_counts, labels=emo_counts.index, autopct="%1.1f%%",
-            colors=sns.color_palette("pastel"))
+    plt.pie(emo_counts, labels=emo_counts.index, autopct="%1.1f%%", colors=color_palette)
+
     plt.title("Emotions")
     st.pyplot(plt)
 
@@ -116,8 +118,8 @@ def plot_emotion_trends(emotional_data):
     st.subheader("📊 Topic Distribution")
     top_counts = df["dominant_topic"].value_counts()
     plt.figure(figsize=(6,6))
-    plt.pie(top_counts, labels=top_counts.index, autopct="%1.1f%%",
-            colors=sns.color_palette("pastel"))
+    plt.pie(top_counts, labels=top_counts.index, autopct="%1.1f%%", colors=color_palette)
+
     plt.title("Journal Topics")
     st.pyplot(plt)
 
