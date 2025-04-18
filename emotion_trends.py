@@ -67,9 +67,8 @@ def plot_emotion_trends(emotional_data):
 
     # —                    Get emotions & topics —            —
     # dominant_emotion already applies via sentiment_analysis
-    df["dominant_emotion"] = df["sentiment"].apply(
-        lambda x: x.get("dominant_emotion","neutral") if isinstance(x,dict) else "neutral"
-    )
+    df["emotion_list"] = df["sentiment"].apply(lambda s: s.get("top_3_emotions", []) if isinstance(s, dict) else [])
+
 
     # run topic pipeline on each answer (cache if you like)
     topics = []

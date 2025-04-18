@@ -67,21 +67,27 @@ sentiment_pipeline = pipeline(
 def analyze_sentiment(text: str) -> dict:
     """
     Analyze `text` and return:
-      {
+    {
         "dominant_emotion": str,
-        "emotion_scores" : { label_str: float_score, ... }
-      }
+        "top_3_emotions": List[str],
+        "emotion_scores": { label_str: float_score, ... }
+    }
     """
-    # pipeline returns List[List[{"label":..,"score":..}]]
     scores = sentiment_pipeline(text)[0]
-    # convert to dict
     emotion_scores = {d["label"]: float(d["score"]) for d in scores}
-    # pick the max
-    dominant_emotion = max(emotion_scores, key=emotion_scores.get)
+
+    # Sort and get top 3
+    top_3 = sorted(emotion_scores.items(), key=lambda kv: kv[1], reverse=True)[:3]
+    top_3_emotions = [label for label, _ in top_3]
+
+    dominant_emotion = top_3_emotions[0]  # First one is still treated as dominant
+
     return {
         "dominant_emotion": dominant_emotion,
-        "emotion_scores": emotion_scores,
+        "top_3_emotions": top_3_emotions,
+        "emotion_scores": emotion_scores
     }
+
 
 # ─────────────── Quick smoke test ───────────────
 if __name__ == "__main__":

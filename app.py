@@ -261,7 +261,12 @@ elif st.session_state.page_state == "personalized":
             st.session_state.chat_history.append(("User", feeling))
             followup_prompt = generate_followup_prompt(st.session_state.user_id, feeling, st.session_state.session_entries)
             st.session_state.chat_history.append(("AI", followup_prompt))
-            st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": feeling, "sentiment": sentiment_score})
+            st.session_state.session_entries.append({"question": "How are you feeling today?", "answer": feeling, "sentiment": {
+    "dominant_emotion": sentiment_score["dominant_emotion"],
+    "top_3_emotions": sentiment_score["top_3_emotions"],
+    "emotion_scores": sentiment_score["emotion_scores"]
+}
+})
             st.session_state.session_entries.append({"question": followup_prompt, "answer": None})
             st.session_state.feeling = feeling
             st.session_state.awaiting_response = "user_journal_entry"
@@ -307,7 +312,12 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             sentiment_score = analyze_sentiment(journal_entry)
             st.session_state.chat_history.append(("User", journal_entry))
             st.session_state.session_entries[-1]["answer"] = journal_entry
-            st.session_state.session_entries[-1]["sentiment"] = sentiment_score
+            st.session_state.session_entries[-1]["sentiment"] = {
+    "dominant_emotion": sentiment_score["dominant_emotion"],
+    "top_3_emotions": sentiment_score["top_3_emotions"],
+    "emotion_scores": sentiment_score["emotion_scores"]
+}
+
 
             st.session_state["journal_input"] = ""
 
@@ -330,7 +340,12 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             sentiment_score = analyze_sentiment(journal_entry)
             st.session_state.chat_history.append(("User", journal_entry))
             st.session_state.session_entries[-1]["answer"] = journal_entry
-            st.session_state.session_entries[-1]["sentiment"] = sentiment_score
+            st.session_state.session_entries[-1]["sentiment"] = {
+    "dominant_emotion": sentiment_score["dominant_emotion"],
+    "top_3_emotions": sentiment_score["top_3_emotions"],
+    "emotion_scores": sentiment_score["emotion_scores"]
+}
+
 
             st.session_state["journal_input"] = ""
 
