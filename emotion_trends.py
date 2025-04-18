@@ -54,21 +54,6 @@ def plot_emotion_trends(emotional_data):
     if "timestamp" not in df.columns:
         st.warning("⚠️ Missing timestamps.")
         return
-    
-    # right after you build your DataFrame `df = pd.DataFrame(emotional_data)`
-    st.write("### DEBUG: sample entries", df[["answer"]].head(5))
-
-    # then run your topic pipeline and show its raw output for one example
-    example = df["answer"].iat[0]
-    raw_scores = topic_pipeline(example)[0]
-    st.write("### DEBUG: raw topic scores for first entry", raw_scores)
-
-    # then pick the top label as before
-    df["dominant_topic"] = [
-        max(scores, key=lambda d: d["score"])["label"]
-        for scores in df["answer"].map(lambda t: topic_pipeline(t)[0])
-    ]
-    st.write("### DEBUG: inferred topics", df["dominant_topic"].value_counts())
 
 
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
