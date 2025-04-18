@@ -38,7 +38,7 @@ def preprocess_text(text):
 # —                    Load your topic model              ————
 topic_pipeline = pipeline(
     "text-classification",
-    model="sanabar/roberta-topic-head",  # <-- replace with your HF repo
+    model="sanabar/roberta-topic-head",  
     function_to_apply="sigmoid",
     return_all_scores=True,
     top_k=None,
@@ -66,8 +66,9 @@ def plot_emotion_trends(emotional_data):
         return
 
     # —                    Get emotions & topics —            —
-    # dominant_emotion already applies via sentiment_analysis
     df["emotion_list"] = df["sentiment"].apply(lambda s: s.get("top_3_emotions", []) if isinstance(s, dict) else [])
+    df["dominant_emotion"] = df["emotion_list"].apply(lambda x: x[0] if x else "neutral")
+
 
 
     # run topic pipeline on each answer (cache if you like)
@@ -101,7 +102,9 @@ def plot_emotion_trends(emotional_data):
 
     # —               📊 Emotion Distribution —       —
     st.subheader("📊 Emotion Distribution")
-    emo_counts = df["dominant_emotion"].value_counts()
+    emotion_df = df.explode("emotion_list")
+    emo_counts = emotion_df["emotion_list"].value_counts()    
+    
     plt.figure(figsize=(6,6))
     plt.pie(emo_counts, labels=emo_counts.index, autopct="%1.1f%%",
             colors=sns.color_palette("pastel"))
@@ -119,7 +122,8 @@ def plot_emotion_trends(emotional_data):
 
     # —               🗂️ Emotion × Topic Heatmap —    —
     st.subheader("💡 Emotion × Topic Co‑occurrence")
-    cross = pd.crosstab(df["dominant_topic"], df["dominant_emotion"])
+    heatmap_df = df.explode("emotion_list")
+    cross = pd.crosstab(heatmap_df["dominant_topic"], heatmap_df["emotion_list"])
     plt.figure(figsize=(10,6))
     sns.heatmap(cross, annot=True, fmt="d", cmap="YlGnBu")
     plt.xlabel("Emotion")
