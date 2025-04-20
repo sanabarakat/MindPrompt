@@ -11,7 +11,10 @@ topic_pipeline = pipeline(
     framework="pt"
 )
 
-def classify_topics(text, threshold=0.3, top_k=2):
+def classify_topics(text):
+
+    threshold = 0.3
+    top_k = 2
     scores = topic_pipeline(text)[0]
     
     # Filter by score threshold
