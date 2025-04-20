@@ -35,15 +35,6 @@ def preprocess_text(text):
     ]
     return " ".join(cleaned)
 
-# —                    Load your topic model              ————
-topic_pipeline = pipeline(
-    "text-classification",
-    model="sanabar/roberta-topic-head",  
-    function_to_apply="sigmoid",
-    return_all_scores=True,
-    top_k=None,
-    framework="pt"
-)
 
 color_palette = sns.color_palette("pastel")[:10]  # You can use up to 10 consistent soft colors
 
@@ -70,15 +61,6 @@ def plot_emotion_trends(emotional_data):
     # —                    Get emotions & topics —            —
     df["emotion_list"] = df["sentiment"].apply(lambda s: s.get("top_3_emotions", [s.get("dominant_emotion")]) if isinstance(s, dict) else [])
     df["dominant_emotion"] = df["emotion_list"].apply(lambda x: x[0] if x else "neutral")
-
-    # run topic pipeline on each answer (cache if you like)
-    topics = []
-    for txt in df["answer"]:
-        # pipeline returns list of dicts [{label:,score:},…]
-        scores = topic_pipeline(txt)[0]
-        top = max(scores, key=lambda d: d["score"])["label"]
-        topics.append(top)
-    df["dominant_topic"] = topics
 
     # —                 Word Cloud —            ————
     st.subheader("☁️ Most Frequent Words in Journal Entries")
@@ -114,24 +96,27 @@ def plot_emotion_trends(emotional_data):
     st.pyplot(plt)
 
 
-    # —               📊 Topic Distribution —     —
+    # Expand topics column safely
+    df["topics"] = df["topics"].apply(lambda t: t if isinstance(t, list) else [t])
+    df_exploded = df.explode("emotion_list").explode("topics")
+
+    # Topic Distribution
     st.subheader("📊 Topic Distribution")
-    top_counts = df["dominant_topic"].value_counts()
+    top_counts = df_exploded["topics"].value_counts()
     plt.figure(figsize=(6,6))
     plt.pie(top_counts, labels=top_counts.index, autopct="%1.1f%%", colors=color_palette)
-
     plt.title("Journal Topics")
     st.pyplot(plt)
 
-    # —               🗂️ Emotion × Topic Heatmap —    —
+    # Emotion × Topic Heatmap
     st.subheader("💡 Emotion × Topic Co‑occurrence")
-    heatmap_df = df.explode("emotion_list")
-    cross = pd.crosstab(heatmap_df["dominant_topic"], heatmap_df["emotion_list"])
+    cross = pd.crosstab(df_exploded["topics"], df_exploded["emotion_list"])
     plt.figure(figsize=(10,6))
     sns.heatmap(cross, annot=True, fmt="d", cmap="YlGnBu")
     plt.xlabel("Emotion")
     plt.ylabel("Topic")
     st.pyplot(plt)
+
 
     # —               🕒 Journaling Frequency —     —
     st.subheader("🕒 Journaling Frequency Over Time")

@@ -71,10 +71,10 @@ def save_journal_entry(user_id, session_entries):
             structured_data["entries"].append({
                 "question": entry.get("question", ""),
                 "answer": entry.get("answer", ""),
+                "topics": entry.get("topics", []),
                 "sentiment": {
                     "dominant_emotion": entry.get("sentiment", {}).get("dominant_emotion", ""),
                     "top_3_emotions": entry.get("sentiment", {}).get("top_3_emotions", []),
-                    "emotion_scores": entry.get("sentiment", {}).get("emotion_scores", {})
                 }
             })
 

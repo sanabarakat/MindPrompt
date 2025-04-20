@@ -14,6 +14,8 @@ from generate_summary import generate_session_summary
 from sentiment_analysis import analyze_sentiment
 from firebase_utils import get_latest_journal_entry, save_journal_entry
 from emotion_trends import plot_emotion_trends
+from topic_classification import classify_topics  
+
 
 # Initialize Firebase
 db = init_firebase()
@@ -258,6 +260,7 @@ elif st.session_state.page_state == "personalized":
 
         if st.button("Submit Feeling") and feeling.strip():
             sentiment_score = analyze_sentiment(feeling)
+            topics = classify_topics(feeling)
             st.session_state.chat_history.append(("User", feeling))
             followup_prompt = generate_followup_prompt(st.session_state.user_id, feeling, st.session_state.session_entries)
             st.session_state.chat_history.append(("AI", followup_prompt))
@@ -310,13 +313,15 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
     with col1:
         if st.button("Move to the next Question") and journal_entry.strip():
             sentiment_score = analyze_sentiment(journal_entry)
+            topics = classify_topics(journal_entry)
             st.session_state.chat_history.append(("User", journal_entry))
             st.session_state.session_entries[-1]["answer"] = journal_entry
+            st.session_state.session_entries[-1]["topics"] = topics
             st.session_state.session_entries[-1]["sentiment"] = {
-    "dominant_emotion": sentiment_score["dominant_emotion"],
-    "top_3_emotions": sentiment_score["top_3_emotions"],
-    "emotion_scores": sentiment_score["emotion_scores"]
-}
+                "dominant_emotion": sentiment_score["dominant_emotion"],
+                "top_3_emotions": sentiment_score["top_3_emotions"],
+                "emotion_scores": sentiment_score["emotion_scores"]
+            }
 
 
             st.session_state["journal_input"] = ""
@@ -338,13 +343,15 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
     with col2:
         if st.button("Submit Answer and End Session") and journal_entry.strip():
             sentiment_score = analyze_sentiment(journal_entry)
+            topics = classify_topics(journal_entry)
             st.session_state.chat_history.append(("User", journal_entry))
             st.session_state.session_entries[-1]["answer"] = journal_entry
+            st.session_state.session_entries[-1]["topics"] = topics
             st.session_state.session_entries[-1]["sentiment"] = {
-    "dominant_emotion": sentiment_score["dominant_emotion"],
-    "top_3_emotions": sentiment_score["top_3_emotions"],
-    "emotion_scores": sentiment_score["emotion_scores"]
-}
+                "dominant_emotion": sentiment_score["dominant_emotion"],
+                "top_3_emotions": sentiment_score["top_3_emotions"],
+                "emotion_scores": sentiment_score["emotion_scores"]
+            }
 
 
             st.session_state["journal_input"] = ""
