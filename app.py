@@ -329,8 +329,7 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
                 }
 
 
-                st.session_state["journal_input"] = ""
-
+                st.session_state.pop("journal_input", None)
 
                 if st.session_state.page_state == "traditional":
                     next_prompt = generate_first_prompt(st.session_state.user_id)
