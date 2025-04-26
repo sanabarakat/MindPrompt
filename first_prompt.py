@@ -50,9 +50,9 @@ def generate_first_prompt(user_id):
 
     selected_question = random.choice(meaningful_questions)["Question"]
 
-    print("Base Question from Bank:", selected_question)
+    adapted_prompt = personalize_prompt(user_id, selected_question, preferred_category, hobbies)
 
-    return personalize_prompt(user_id, selected_question, preferred_category, hobbies)
+    return adapted_prompt, selected_question   
 
 def personalize_prompt(user_id, question, question_format, hobbies):
     """Uses AI to refine the question based on the user's past responses, goals, and hobbies."""
