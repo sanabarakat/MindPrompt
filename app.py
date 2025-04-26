@@ -311,7 +311,7 @@ if "chat_history" in st.session_state:
 
 # === JOURNALING RESPONSE ===
 if st.session_state.get("awaiting_response") == "user_journal_entry":
-    if not st.session_state.get("session_ended", False):
+    if st.session_state.get("session_ended", False):
         journal_entry = st.text_area("Your response:", key="journal_input")
         col1, col2 = st.columns(2)
 
