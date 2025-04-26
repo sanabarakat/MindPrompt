@@ -357,7 +357,6 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             }
 
 
-            st.session_state["journal_input"] = ""
             st.session_state["session_ended"] = True
 
             # Generate summary before saving
