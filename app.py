@@ -205,14 +205,16 @@ elif st.session_state.page_state == "edit_profile":
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
 
-    available_categories = ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"]
-    user_selected_categories = user_data.get("question_format", [])
-    filtered_categories = [c for c in user_selected_categories if c in available_categories]
 
-    
+
+
     if user_doc.exists:
         user_data = user_doc.to_dict()
         st.subheader("Edit Your Profile")
+
+        available_categories = ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"]
+        user_selected_categories = user_data.get("question_format", [])
+        filtered_categories = [c for c in user_selected_categories if c in available_categories]
 
         with st.form("edit_profile_form"):
             name = st.text_input("Name", value=user_data.get("name", ""))
