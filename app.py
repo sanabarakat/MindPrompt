@@ -61,6 +61,8 @@ if "user_id" not in st.session_state:
     st.session_state.page_state = "home"
 if "page_state" not in st.session_state:
     st.session_state.page_state = "home"
+if "session_ended" not in st.session_state:   
+    st.session_state.session_ended = False
 
 # === PAGE: HOME ===
 if st.session_state.page_state == "home":
@@ -309,64 +311,65 @@ if "chat_history" in st.session_state:
 
 # === JOURNALING RESPONSE ===
 if st.session_state.get("awaiting_response") == "user_journal_entry":
-    journal_entry = st.text_area("Your response:", key="journal_input")
-    col1, col2 = st.columns(2)
+    if not st.session_state.get("session_ended", False):
+        journal_entry = st.text_area("Your response:", key="journal_input")
+        col1, col2 = st.columns(2)
 
-    with col1:
-        if st.button("Move to the next Question") and journal_entry.strip():
-            sentiment_score = analyze_sentiment(journal_entry)
-            topics = classify_topics(journal_entry)
-            st.session_state.chat_history.append(("User", journal_entry))
-            st.session_state.session_entries[-1]["answer"] = journal_entry
-            st.session_state.session_entries[-1]["topics"] = topics
-            st.session_state.session_entries[-1]["sentiment"] = {
-                "dominant_emotion": sentiment_score["dominant_emotion"],
-                "top_3_emotions": sentiment_score["top_3_emotions"],
-                "emotion_scores": sentiment_score["emotion_scores"]
-            }
-
-
-            st.session_state["journal_input"] = ""
+        with col1:
+            if st.button("Move to the next Question") and journal_entry.strip():
+                sentiment_score = analyze_sentiment(journal_entry)
+                topics = classify_topics(journal_entry)
+                st.session_state.chat_history.append(("User", journal_entry))
+                st.session_state.session_entries[-1]["answer"] = journal_entry
+                st.session_state.session_entries[-1]["topics"] = topics
+                st.session_state.session_entries[-1]["sentiment"] = {
+                    "dominant_emotion": sentiment_score["dominant_emotion"],
+                    "top_3_emotions": sentiment_score["top_3_emotions"],
+                    "emotion_scores": sentiment_score["emotion_scores"]
+                }
 
 
-            if st.session_state.page_state == "traditional":
-                next_prompt = generate_first_prompt(st.session_state.user_id)
-            else:
-                next_prompt = generate_followup_prompt(
-                    st.session_state.user_id,
-                    journal_entry,
-                    st.session_state.session_entries
-                )
-
-            st.session_state.chat_history.append(("AI", next_prompt))
-            st.session_state.session_entries.append({"question": next_prompt, "answer": None})
-            st.rerun()
-
-    with col2:
-        if st.button("Submit Answer and End Session") and journal_entry.strip():
-            sentiment_score = analyze_sentiment(journal_entry)
-            topics = classify_topics(journal_entry)
-            st.session_state.chat_history.append(("User", journal_entry))
-            st.session_state.session_entries[-1]["answer"] = journal_entry
-            st.session_state.session_entries[-1]["topics"] = topics
-            st.session_state.session_entries[-1]["sentiment"] = {
-                "dominant_emotion": sentiment_score["dominant_emotion"],
-                "top_3_emotions": sentiment_score["top_3_emotions"],
-                "emotion_scores": sentiment_score["emotion_scores"]
-            }
+                st.session_state["journal_input"] = ""
 
 
-            st.session_state["journal_input"] = ""
+                if st.session_state.page_state == "traditional":
+                    next_prompt = generate_first_prompt(st.session_state.user_id)
+                else:
+                    next_prompt = generate_followup_prompt(
+                        st.session_state.user_id,
+                        journal_entry,
+                        st.session_state.session_entries
+                    )
 
-            # Generate summary before saving
-            summary = generate_session_summary(st.session_state["session_entries"], st.session_state["user_id"])
-            st.session_state["chat_history"].append(("AI", f"📌 **Reflection Summary**: {summary}"))
+                st.session_state.chat_history.append(("AI", next_prompt))
+                st.session_state.session_entries.append({"question": next_prompt, "answer": None})
+                st.rerun()
 
-            # **Save structured session in Firebase**
-            save_journal_entry(st.session_state["user_id"], st.session_state["session_entries"])
+        with col2:
+            if st.button("Submit Answer and End Session") and journal_entry.strip():
+                sentiment_score = analyze_sentiment(journal_entry)
+                topics = classify_topics(journal_entry)
+                st.session_state.chat_history.append(("User", journal_entry))
+                st.session_state.session_entries[-1]["answer"] = journal_entry
+                st.session_state.session_entries[-1]["topics"] = topics
+                st.session_state.session_entries[-1]["sentiment"] = {
+                    "dominant_emotion": sentiment_score["dominant_emotion"],
+                    "top_3_emotions": sentiment_score["top_3_emotions"],
+                    "emotion_scores": sentiment_score["emotion_scores"]
+                }
 
-            # Display summary
-            st.success("Session saved! 🌟")
-            st.markdown(f"**Reflection Summary:** {summary}")
+
+                st.session_state["session_ended"] = True
+
+                # Generate summary before saving
+                summary = generate_session_summary(st.session_state["session_entries"], st.session_state["user_id"])
+                st.session_state["chat_history"].append(("AI", f"📌 **Reflection Summary**: {summary}"))
+
+                # **Save structured session in Firebase**
+                save_journal_entry(st.session_state["user_id"], st.session_state["session_entries"])
+
+                # Display summary
+                st.success("Session saved! 🌟")
+                st.markdown(f"**Reflection Summary:** {summary}")
 
 
