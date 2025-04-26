@@ -49,6 +49,9 @@ def generate_first_prompt(user_id):
         return "It seems you've answered all questions in this category! Let's reflect on today's experiences instead."
 
     selected_question = random.choice(meaningful_questions)["Question"]
+
+    print("Base Question from Bank:", selected_question)
+
     return personalize_prompt(user_id, selected_question, preferred_category, hobbies)
 
 def personalize_prompt(user_id, question, question_format, hobbies):
