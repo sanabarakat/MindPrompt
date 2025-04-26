@@ -50,6 +50,8 @@ def reset_to_main_menu():
     st.rerun()
 
 
+
+
 # Initialize session state
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
@@ -203,6 +205,11 @@ elif st.session_state.page_state == "edit_profile":
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
 
+    available_categories = ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"]
+    user_selected_categories = user_data.get("question_format", [])
+    filtered_categories = [c for c in user_selected_categories if c in available_categories]
+
+    
     if user_doc.exists:
         user_data = user_doc.to_dict()
         st.subheader("Edit Your Profile")
@@ -218,7 +225,11 @@ elif st.session_state.page_state == "edit_profile":
             journaling_frequency = st.radio("How often do you journal?", ["Daily", "Couple of Days a Week", "Weekly", "Occasionally"], index=["Daily", "Couple of Days a Week", "Weekly", "Occasionally"].index(user_data.get("frequency", "Weekly")))
             journaling_time = st.radio("Preferred journaling time", ["Morning", "Afternoon", "Evening"], index=["Morning", "Afternoon", "Evening"].index(user_data.get("time", "Morning")))
             question_pattern = st.radio("Prompt Type", ["Traditional Journaling Questions tailored to your personality", "AI-Generated Personalized Reflections"], index=["Traditional Journaling Questions tailored to your personality", "AI-Generated Personalized Reflections"].index(user_data.get("question_pattern", "Traditional Journaling Questions tailored to your personality")))
-            question_format = st.multiselect("Prompt Category (you can select multiple)", ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"],default=user_data.get("question_format", []))            
+            question_format = st.multiselect(
+                "Prompt Category (you can select multiple)",
+                available_categories,
+                default=filtered_categories
+            )          
             expression = st.selectbox("How do you express yourself?", ["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"], index=["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"].index(user_data.get("expression", "Writing")))
             stress = st.radio("Do you experience frequent stress?", ["Yes", "No", "Sometimes"], index=["Yes", "No", "Sometimes"].index(user_data.get("stress", "Sometimes")))
             stress_reason = st.selectbox("What stresses you most?", ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"], index=["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"].index(user_data.get("stress_reason", "Other")))
