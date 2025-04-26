@@ -309,9 +309,9 @@ if "chat_history" in st.session_state:
 
 # === JOURNALING RESPONSE ===
 if st.session_state.get("awaiting_response") == "user_journal_entry":
-    journal_entry = st.text_area("Your response:")
-
-    col1, col2 = st.columns(2)
+    if not st.session_state.get("session_ended", False):
+        journal_entry = st.text_area("Your response:", key="journal_input")
+        col1, col2 = st.columns(2)
 
     with col1:
         if st.button("Move to the next Question") and journal_entry.strip():
@@ -358,6 +358,7 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
 
 
             st.session_state["journal_input"] = ""
+            st.session_state["session_ended"] = True
 
             # Generate summary before saving
             summary = generate_session_summary(st.session_state["session_entries"], st.session_state["user_id"])
