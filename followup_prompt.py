@@ -28,7 +28,7 @@ You are a compassionate AI journaling assistant helping {user_data['name']} refl
 
 Context:
 - Journals in the {user_data['time']}
-- Journaling Goal: {user_data['question_format']}
+- Journaling Goal(s): {", ".join(user_data.get("question_format", []))}
 - Works as a {user_data['occupation']}
 - Personality: {user_data['personality']}
 - Hobbies: {user_data['hobbies']}

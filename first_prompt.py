@@ -17,10 +17,16 @@ def generate_first_prompt(user_id):
         return "Welcome! Let's start by writing about how you're feeling today."
 
     user_data = user_doc.to_dict()
-    preferred_category = user_data.get("question_format")
+    preferred_categories = user_data.get("question_format", [])
     hobbies = ", ".join(user_data.get("hobbies", []))
 
-    # Fetch questions from Firebase based on user's category
+    # Pick one preferred category randomly
+    if isinstance(preferred_categories, list) and preferred_categories:
+        preferred_category = random.choice(preferred_categories)
+    else:
+        preferred_category = preferred_categories
+
+    # Fetch questions from Firebase based on selected category
     try:
         questions_ref = db.collection("questions_bank").where(
             filter=firestore.FieldFilter("Category", "==", preferred_category)
