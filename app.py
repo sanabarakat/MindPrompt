@@ -370,4 +370,6 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
             st.success("Session saved! 🌟")
             st.markdown(f"**Reflection Summary:** {summary}")
 
+            st.stop()
+
 
