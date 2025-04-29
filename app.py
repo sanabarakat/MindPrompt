@@ -254,18 +254,19 @@ elif st.session_state.page_state == "edit_profile":
     else:
         st.error("User not found.")
 
-    if st.button("🗑️ Delete My Account"):
-        st.error("Deleting your account will permanently remove all your data including journal entries. This action is irreversible.")
+    st.warning("⚠️ Deleting your account will permanently erase your data.")
+    delete_confirm = st.checkbox("I understand and want to delete my account")
 
-        confirm = st.checkbox("I confirm that I want to delete my account and all associated data.")
-        if confirm:
-            delete_user_data(user_id)
-            st.success("Your account and all data have been permanently deleted.")
-            st.session_state.clear()
-            st.rerun()
+    if st.button("Delete Account") and delete_confirm:
+        user_id = st.session_state.user_id
+        journal_entries = db.collection("journals").where("user_id", "==", user_id).stream()
+        for doc in journal_entries:
+            doc.reference.delete()
+        
+        db.collection("users").document(user_id).delete()
 
-    if st.button("🔙 Back"):
-        st.session_state.page_state = "mode_selection"
+        st.success("Your account has been deleted.")
+        st.session_state.clear()
         st.rerun()
 
  
