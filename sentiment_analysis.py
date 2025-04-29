@@ -24,6 +24,10 @@ from transformers import (
     pipeline,
 )
 import torch
+from huggingface_hub import login
+import streamlit as st
+
+login(token=st.secrets["HUGGINGFACE_TOKEN"])
 
 tokenizer = AutoTokenizer.from_pretrained("sanabar/roberta-goemo-journals")
 model = AutoModelForSequenceClassification.from_pretrained("sanabar/roberta-goemo-journals")
