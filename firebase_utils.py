@@ -5,7 +5,7 @@ from firebase_config import init_firebase
 try:
     db = init_firebase()
 except Exception as e:
-    print(f"🔥 Firebase Initialization Error: {e}")
+    print(f"Firebase Initialization Error: {e}")
 
 def get_firestore_client():
     return db
@@ -24,37 +24,33 @@ def get_firestore_client():
 #         return entries if entries else None  # Return full list of past entries
 
 #     except Exception as e:
-#         print(f"🔥 Firestore Query Error: {e}")
+#         print(f"Firestore Query Error: {e}")
 #         return None
 
 def get_latest_journal_entry(user_id):
     """Retrieve past journal entries and attach the session's timestamp."""
     try:
-        print(f"🛠️ Debug: get_latest_journal_entry called with user_id: {user_id}")
 
-        journals_ref = db.collection("journals").stream()  # Fetch all journal sessions
+        journals_ref = db.collection("journals").stream()  
         entries = []
 
         for journal in journals_ref:
             journal_data = journal.to_dict()
 
-            # **Skip if user_id does not match**
             if journal_data.get("user_id") != user_id:
                 continue
 
-            # **Get session timestamp (from Firestore)**
             session_timestamp = journal_data.get("timestamp")
 
-            # **Attach timestamp to each journal entry**
             for entry in journal_data.get("entries", []):
-                entry["timestamp"] = session_timestamp  # Assign session timestamp
+                entry["timestamp"] = session_timestamp  
                 entries.append(entry)
 
-        print(f"✅ Retrieved {len(entries)} journal entries for user {user_id}")
+        print(f"Retrieved {len(entries)} journal entries for user {user_id}")
         return entries if entries else []
 
     except Exception as e:
-        print(f"🔥 Firestore Query Error: {e}")
+        print(f"Firestore Query Error: {e}")
         return None
 
 
@@ -79,14 +75,14 @@ def save_journal_entry(user_id, session_entries):
             })
 
         db.collection("journals").add(structured_data)
-        print("✅ Journal session saved successfully!")
+        print("Journal session saved successfully!")
     except Exception as e:
-        print(f"🔥 Firestore Save Error: {e}")
+        print(f"Firestore Save Error: {e}")
 
 
 def retrieve_user_data(user_id):
     """Retrieve user data and past journal entries from Firestore."""
-    db = get_firestore_client()  # Ensure Firebase is initialized
+    db = get_firestore_client()  
 
     user_ref = db.collection("users").document(user_id)
     user_doc = user_ref.get()
@@ -96,10 +92,23 @@ def retrieve_user_data(user_id):
 
     user_data = user_doc.to_dict()
 
-    # Retrieve past journal entries
     journals_ref = db.collection("users").document(user_id).collection("journals").stream()
     past_entries = [{"question": j.to_dict().get("question"), "answer": j.to_dict().get("answer")} for j in journals_ref]
 
     return user_data, past_entries
+
+def delete_user_data(user_id):
+    db = get_firestore_client()  
+
+    try:
+        db.collection("users").document(user_id).delete()
+
+        journals_ref = db.collection("journals").where("user_id", "==", user_id).stream()
+        for journal in journals_ref:
+            journal.reference.delete()
+
+        print(f"User data and journal entries for {user_id} deleted successfully.")
+    except Exception as e:
+        print(f"Error deleting user data: {e}")
 
 

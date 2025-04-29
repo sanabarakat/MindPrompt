@@ -9,7 +9,6 @@ from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
 import re
 
-# —                     Setup NLTK                ————
 nltk.download("stopwords")
 nltk.download("wordnet")
 nltk.download("omw-1.4")
@@ -36,33 +35,33 @@ def preprocess_text(text):
     return " ".join(cleaned)
 
 
-color_palette = sns.color_palette("pastel")[:10]  # You can use up to 10 consistent soft colors
+color_palette = sns.color_palette("pastel")[:10]  
 
+# function to create charts
 def plot_emotion_trends(emotional_data):
     if not emotional_data:
-        st.warning("⚠️ No emotional data available.")
+        st.warning("No emotional data available.")
         return
 
     df = pd.DataFrame(emotional_data)
     if "timestamp" not in df.columns:
-        st.warning("⚠️ Missing timestamps.")
+        st.warning("Missing timestamps.")
         return
 
 
     df["timestamp"] = pd.to_datetime(df["timestamp"], errors="coerce")
     if df["timestamp"].isna().all():
-        st.warning("⚠️ Invalid timestamps.")
+        st.warning("Invalid timestamps.")
         return
 
     if "answer" not in df.columns or "sentiment" not in df.columns:
-        st.warning("⚠️ Missing answers or sentiment.")
+        st.warning("Missing answers or sentiment.")
         return
 
-    # —                    Get emotions & topics —            —
     df["emotion_list"] = df["sentiment"].apply(lambda s: s.get("top_3_emotions", [s.get("dominant_emotion")]) if isinstance(s, dict) else [])
     df["dominant_emotion"] = df["emotion_list"].apply(lambda x: x[0] if x else "neutral")
 
-    # —                 Word Cloud —            ————
+#create word cloud 
     st.subheader("☁️ Most Frequent Words in Journal Entries")
     all_text = " ".join(df["answer"].tolist())
     cleaned = preprocess_text(all_text)
@@ -80,9 +79,9 @@ def plot_emotion_trends(emotional_data):
         plt.axis("off")
         st.pyplot(plt)
     else:
-        st.warning("⚠️ Not enough text for word cloud.")
+        st.warning("Not enough text for word cloud.")
 
-    # —               📊 Emotion Distribution —       —
+# create emotions pie chart
     st.subheader("📊 Emotion Distribution")
     emotion_df = df.explode("emotion_list")
     emo_counts = emotion_df["emotion_list"].value_counts() 
@@ -96,11 +95,10 @@ def plot_emotion_trends(emotional_data):
     st.pyplot(plt)
 
 
-    # Expand topics column safely
+# create topic pie chart
     df["topics"] = df["topics"].apply(lambda t: t if isinstance(t, list) else [t])
     df_exploded = df.explode("emotion_list").explode("topics")
 
-    # Topic Distribution
     st.subheader("📊 Topic Distribution")
     top_counts = df_exploded["topics"].value_counts()
     plt.figure(figsize=(6,6))
@@ -108,7 +106,7 @@ def plot_emotion_trends(emotional_data):
     plt.title("Journal Topics")
     st.pyplot(plt)
 
-    # Emotion × Topic Heatmap
+# heatmap
     st.subheader("💡 Emotion × Topic Co‑occurrence")
     cross = pd.crosstab(df_exploded["topics"], df_exploded["emotion_list"])
     plt.figure(figsize=(10,6))
@@ -117,8 +115,7 @@ def plot_emotion_trends(emotional_data):
     plt.ylabel("Topic")
     st.pyplot(plt)
 
-
-    # —               🕒 Journaling Frequency —     —
+# journaling frequency
     st.subheader("🕒 Journaling Frequency Over Time")
     df["date"] = df["timestamp"].dt.date
     counts = df["date"].value_counts().sort_index()
@@ -128,7 +125,7 @@ def plot_emotion_trends(emotional_data):
     plt.title("Entries per Day")
     st.pyplot(plt)
 
-    # —               📅 Weekly Patterns —     —
+# weekly emotions bar chart
     df["day_of_week"] = df["timestamp"].dt.day_name()
     weekly = pd.crosstab(df["day_of_week"], df["dominant_emotion"])
     weekday_order = ["Monday","Tuesday","Wednesday","Thursday","Friday","Saturday","Sunday"]
