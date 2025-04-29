@@ -258,15 +258,21 @@ elif st.session_state.page_state == "edit_profile":
     delete_confirm = st.checkbox("I understand and want to delete my account")
 
     if st.button("Delete Account") and delete_confirm:
+        # Delete journal entries
         user_id = st.session_state.user_id
         journal_entries = db.collection("journals").where("user_id", "==", user_id).stream()
         for doc in journal_entries:
             doc.reference.delete()
         
+        # Delete user profile
         db.collection("users").document(user_id).delete()
 
-        st.success("Your account has been deleted.")
+        st.success("✅ Your account has been deleted.")
         st.session_state.clear()
+        st.rerun()
+
+    if st.button("🔙 Back"):
+        st.session_state.page_state = "mode_selection"
         st.rerun()
 
  
