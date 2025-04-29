@@ -227,14 +227,7 @@ elif st.session_state.page_state == "edit_profile":
             expression = st.selectbox("How do you express yourself?", ["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"], index=["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"].index(user_data.get("expression", "Writing")))
             stress = st.radio("Do you experience frequent stress?", ["Yes", "No", "Sometimes"], index=["Yes", "No", "Sometimes"].index(user_data.get("stress", "Sometimes")))
             stress_reason = st.selectbox("What stresses you most?", ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"], index=["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"].index(user_data.get("stress_reason", "Other")))
-            st.error("⚠️ Deleting your account will permanently remove all your data including journal entries. This action is irreversible.")
-            if st.button("🗑️ Delete My Account"):
-                confirm = st.checkbox("I confirm that I want to delete my account and all associated data.")
-                if confirm:
-                    delete_user_data(user_id)
-                    st.success("Your account and all data have been permanently deleted.")
-                    st.session_state.clear()
-                    st.rerun()
+
                 
             submitted = st.form_submit_button("Update Profile")
             if submitted:
@@ -260,6 +253,16 @@ elif st.session_state.page_state == "edit_profile":
                 st.rerun()
     else:
         st.error("User not found.")
+
+    if st.button("🗑️ Delete My Account"):
+        st.error("Deleting your account will permanently remove all your data including journal entries. This action is irreversible.")
+
+        confirm = st.checkbox("I confirm that I want to delete my account and all associated data.")
+        if confirm:
+            delete_user_data(user_id)
+            st.success("Your account and all data have been permanently deleted.")
+            st.session_state.clear()
+            st.rerun()
 
     if st.button("🔙 Back"):
         st.session_state.page_state = "mode_selection"
