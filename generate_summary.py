@@ -30,7 +30,7 @@ def generate_session_summary(session_entries, user_id):
     - A motivating closing remark to encourage future journaling.
 
     remember that the user is a {user_data['occupation']} who journals to {user_data['question_format']} and identifies as a {user_data['personality']}. they like to do {user_data['hobbies']} in their free time so maybe use that in your suggestions but make it useful and relevant.
-    make sure you are directing your text to the user and not just describing their writing.
+    make sure you are directing your text to the user and not just describing their writing. if the user used stromg language that raises concern or threats, please make sure to address that in your summary, or suggest following up with a professional.
     """
 
     response = openai.chat.completions.create(
