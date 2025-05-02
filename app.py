@@ -76,7 +76,7 @@ if st.session_state.page_state == "home":
         country = st.text_input("Which Country do you live in?")
         hobbies = st.text_area("Enter your hobbies (comma-separated):")
         journaling_frequency = st.radio("How often do you journal?", ["Daily", "Couple of Days a Week", "Weekly", "Occasionally", "Never"])
-        journaling_time = st.multiselect("What time of day do you prefer to journal?", ["Morning", "Afternoon", "Evening"])
+        journaling_time = st.radio("What time of day do you prefer to journal?", ["Morning", "Afternoon", "Evening"])
         question_pattern = st.radio("What pattern of journaling prompts do you prefer?", ["Traditional Journaling Questions tailored to your personality", "AI-Generated Personalized Reflections"])
         question_format = st.multiselect("What category of journaling prompts do you prefer? (select all that apply)", ["Gratitude", "Daily Reflection", "Understanding Emotions", "Personal Growth", "Stress Management", "Coping & Relaxing"])
         expression = st.selectbox("How do you usually express yourself?", ["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"])
@@ -215,7 +215,7 @@ elif st.session_state.page_state == "edit_profile":
 
         with st.form("edit_profile_form"):
             name = st.text_input("Name", value=user_data.get("name", ""))
-            password = st.text_input("Password", type="password", value=user_data.get("password", ""))
+            password = st.text_input("New Password (leave blank to keep current)", type="password")             
             age = st.number_input("Age", step=1, value=user_data.get("age", 18))
             gender = st.selectbox("Gender", ["Male", "Female", "Other", "Prefer not to say"], index=["Male", "Female", "Other", "Prefer not to say"].index(user_data.get("gender", "Other")))
             occupation = st.text_input("Occupation", value=user_data.get("occupation", ""))
@@ -254,6 +254,9 @@ elif st.session_state.page_state == "edit_profile":
                     "stress": stress,
                     "stress_reason": stress_reason,
                 }
+                if password.strip():
+                    hashed_password = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
+                    updated_data["password"] = hashed_password
                 user_ref.update(updated_data)
                 st.success("Profile updated successfully!")
                 st.session_state.name = name  
