@@ -6,8 +6,6 @@ import datetime
 import uuid  
 import pandas as pd
 from firebase_config import init_firebase
-from firebase_admin import firestore
-from firebase_admin import auth
 from first_prompt import generate_first_prompt
 from followup_prompt import generate_followup_prompt
 from generate_summary import generate_session_summary  
@@ -208,6 +206,10 @@ elif st.session_state.page_state == "edit_profile":
         user_selected_categories = user_data.get("question_format", [])
         filtered_categories = [c for c in user_selected_categories if c in available_categories]
 
+        available_stressors = ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"]
+        user_selected_stressors = user_data.get("stress_reason", [])
+        filtered_stressors = [s for s in user_selected_stressors if s in available_stressors]
+
         with st.form("edit_profile_form"):
             name = st.text_input("Name", value=user_data.get("name", ""))
             password = st.text_input("Password", type="password", value=user_data.get("password", ""))
@@ -226,8 +228,11 @@ elif st.session_state.page_state == "edit_profile":
             )          
             expression = st.selectbox("How do you express yourself?", ["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"], index=["Writing", "Drawing", "Talking to someone", "keeping it to yourself", "Other"].index(user_data.get("expression", "Writing")))
             stress = st.radio("Do you experience frequent stress?", ["Yes", "No", "Sometimes"], index=["Yes", "No", "Sometimes"].index(user_data.get("stress", "Sometimes")))
-            stress_reason = st.selectbox("What stresses you most?", ["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"], index=["Work", "Relationships", "Health", "Family", "Personal Issues and Thoughts", "Finances", "Prefer not to say", "Other"].index(user_data.get("stress_reason", "Other")))
-
+            stress_reason = st.multiselect(
+                "What stresses you out the most? (select all that apply)",
+                available_stressors,
+                default=filtered_stressors
+            )
                 
             submitted = st.form_submit_button("Update Profile")
             if submitted:
@@ -254,20 +259,13 @@ elif st.session_state.page_state == "edit_profile":
     else:
         st.error("User not found.")
 
-    st.warning("⚠️ Deleting your account will permanently erase your data.")
+    st.warning("Deleting your account will permanently erase your data.")
     delete_confirm = st.checkbox("I understand and want to delete my account")
 
     if st.button("Delete Account") and delete_confirm:
-        # Delete journal entries
         user_id = st.session_state.user_id
-        journal_entries = db.collection("journals").where("user_id", "==", user_id).stream()
-        for doc in journal_entries:
-            doc.reference.delete()
-        
-        # Delete user profile
-        db.collection("users").document(user_id).delete()
-
-        st.success("✅ Your account has been deleted.")
+        delete_user_data(user_id)
+        st.success("Your account has been deleted.")
         st.session_state.clear()
         st.rerun()
 
@@ -276,7 +274,6 @@ elif st.session_state.page_state == "edit_profile":
         st.rerun()
 
  
-
 # personalized journaling page
 elif st.session_state.page_state == "personalized":
     show_page_intro("Personalized Journaling", "Let AI guide your self-reflection based on how you feel.")
@@ -352,7 +349,6 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
                     "emotion_scores": sentiment_score["emotion_scores"]
                 }
 
-
                 st.session_state.pop("journal_input", None)
 
                 if st.session_state.page_state == "traditional":
@@ -381,17 +377,13 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
                     "emotion_scores": sentiment_score["emotion_scores"]
                 }
 
-
                 st.session_state["session_ended"] = True
 
-                # Generate summary before saving
                 summary = generate_session_summary(st.session_state["session_entries"], st.session_state["user_id"])
                 st.session_state["chat_history"].append(("AI", f"📌 **Reflection Summary**: {summary}"))
 
-                # **Save structured session in Firebase**
                 save_journal_entry(st.session_state["user_id"], st.session_state["session_entries"])
 
-                # Display summary
                 st.success("Session saved! 🌟")
                 st.markdown(f"**Reflection Summary:** {summary}")
 

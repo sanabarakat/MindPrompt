@@ -93,8 +93,17 @@ def retrieve_user_data(user_id):
     user_data = user_doc.to_dict()
 
     journals_ref = db.collection("users").document(user_id).collection("journals").stream()
-    past_entries = [{"question": j.to_dict().get("question"), "answer": j.to_dict().get("answer")} for j in journals_ref]
-
+    past_entries = []
+    for journal in journals_ref:
+        journal_data = journal.to_dict()
+        entries = journal_data.get("entries", [])
+        for entry in entries:
+            past_entries.append({
+                "question": entry.get("question"),
+                "answer": entry.get("answer"),
+                "sentiment": entry.get("sentiment"),
+                "topics": entry.get("topics")
+            })
     return user_data, past_entries
 
 def delete_user_data(user_id):

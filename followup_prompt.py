@@ -7,22 +7,30 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 openai_client = OpenAI(api_key=openai.api_key)
 
 def generate_followup_prompt(user_id, user_feeling, session_entries):
-    """Generates a unique follow-up question to deepen reflection."""
 
-    # Load user data and past entries
     user_data, past_entries = retrieve_user_data(user_id)
 
-    # Extract previous questions and responses from current session
+    previous_journals = "\n".join(
+    f"Q: {entry.get('question', 'N/A')}\nA: {entry.get('answer', 'N/A')}\n"
+    f"✦ Emotions: {', '.join(entry.get('sentiment', {}).get('top_3_emotions', []))}\n"
+    f"✦ Topics: {', '.join(entry.get('topics', []))}"
+    for entry in past_entries if entry.get("question") and entry.get("answer")
+) or "No previous entries found."
+
     previous_questions = [entry["question"] for entry in session_entries if entry.get("question")]
     previous_responses = [entry["answer"] for entry in session_entries if entry.get("answer")]
+    emotions = [entry["sentiment"]["dominant_emotion"] for entry in session_entries if entry.get("sentiment")]
+    topics = [entry["topics"] for entry in session_entries if entry.get("topics")]
     
-    # Format previous questions as a block
     questions_block = "\n- " + "\n- ".join(previous_questions) if previous_questions else "None yet"
 
-    # Format session responses
-    session_summary = "\n".join(f"{q}\n→ {a}" for q, a in zip(previous_questions, previous_responses) if q and a)
-
-    # Build the prompt
+    session_summary = "\n".join(
+        f"Q: {entry.get('question', 'N/A')}\nA: {entry.get('answer', 'N/A')}\n"
+        f"✦ Emotion: {entry.get('sentiment', {}).get('dominant_emotion', 'Unknown')}\n"
+        f"✦ Topics: {', '.join(entry.get('topics', []))}"
+        for entry in session_entries
+        if entry.get("question") and entry.get("answer")
+    )
     prompt = f"""
 You are a compassionate AI journaling assistant helping {user_data['name']} reflect.
 
@@ -43,6 +51,8 @@ Session Reflections so far:
 Previous Questions in this session:
 {questions_block}
 
+Previous journaling entries:
+{previous_journals}
 Your task:
 Generate a new, **non-repetitive**, personalized journaling question that builds on the user’s journey so far and encourages deeper emotional insight. Avoid rephrasing previous questions.
     """

@@ -11,9 +11,13 @@ openai.api_key = st.secrets["OPENAI_API_KEY"]
 openai_client = OpenAI(api_key=openai.api_key)
 
 def generate_session_summary(session_entries, user_id):
-    """Generates a final session summary based on the user's journal entries."""
     user_data, past_entries = retrieve_user_data(user_id)
-    journal_content = "\n".join(entry["answer"] for entry in session_entries if entry["answer"])
+    journal_content = "\n".join(
+        f"A: {entry.get('answer', 'N/A')}\n"
+        f"✦ Emotions: {', '.join(entry.get('sentiment', {}).get('top_3_emotions', []))}\n"
+        f"✦ Topics: {', '.join(entry.get('topics', []))}"
+        for entry in session_entries if entry.get("answer")
+    )
 
     prompt = f"""
     The user has just completed a journaling session. Their responses are:

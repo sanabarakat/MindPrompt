@@ -11,7 +11,6 @@ openai_client = OpenAI(api_key=openai.api_key)
 def generate_first_prompt(user_id):
     db = get_firestore_client()
 
-    # Fetch user preferences
     user_doc = db.collection("users").document(user_id).get()
     if not user_doc.exists:
         return "Welcome! Let's start by writing about how you're feeling today."
@@ -20,13 +19,11 @@ def generate_first_prompt(user_id):
     preferred_categories = user_data.get("question_format", [])
     hobbies = ", ".join(user_data.get("hobbies", []))
 
-    # Pick one preferred category randomly
     if isinstance(preferred_categories, list) and preferred_categories:
         preferred_category = random.choice(preferred_categories)
     else:
         preferred_category = preferred_categories
 
-    # Fetch questions from Firebase based on selected category
     try:
         questions_ref = db.collection("questions_bank").where(
             filter=firestore.FieldFilter("Category", "==", preferred_category)
@@ -37,7 +34,6 @@ def generate_first_prompt(user_id):
     except Exception:
         return "There was an error fetching questions. Please try again."
 
-    # Filter out already asked questions
     past_entries = get_latest_journal_entry(user_id)
     asked_questions = {entry["question"] for entry in past_entries}
     meaningful_questions = [
@@ -52,10 +48,9 @@ def generate_first_prompt(user_id):
 
     adapted_prompt = personalize_prompt(user_id, selected_question, preferred_category, hobbies)
 
-    return adapted_prompt, selected_question   
+    return adapted_prompt  
 
 def personalize_prompt(user_id, question, question_format, hobbies):
-    """Uses AI to refine the question based on the user's past responses, goals, and hobbies."""
     past_entries = get_latest_journal_entry(user_id)
     past_responses = "\n".join(entry["answer"] for entry in past_entries if entry["answer"])[:500]
 
@@ -65,7 +60,7 @@ def personalize_prompt(user_id, question, question_format, hobbies):
 
     Journaling goal: {question_format}
     User hobbies: {hobbies}
-    Past reflections: {past_responses}
+    
 
     Refine the following journaling question to be:
     - Deeply thought-provoking
