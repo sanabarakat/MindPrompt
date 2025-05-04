@@ -340,14 +340,15 @@ elif st.session_state.page_state == "traditional":
 
 if st.session_state.get("awaiting_response") == "user_journal_entry":
     if not st.session_state.get("session_ended", False):
-        if "chat_history" in st.session_state:
-            for role, message in st.session_state["chat_history"]:
-                if role == "User":
-                    st.markdown(f"<div class='chat-container'><span class='chat-user'>👤 {role}:</span> {message}</div>", unsafe_allow_html=True)
-                else:
-                    st.markdown(f"<div class='chat-container'><span class='chat-ai'>🤖 {role}:</span> {message}</div>", unsafe_allow_html=True)
 
-        journal_entry = st.text_area("Your response:", key="journal_input")
+        for role, message in st.session_state["chat_history"]:
+            if role == "User":
+                st.markdown(f"<div class='chat-container'><span class='chat-user'>👤 {role}:</span> {message}</div>", unsafe_allow_html=True)
+            else:
+                st.markdown(f"<div class='chat-container'><span class='chat-ai'>🤖 {role}:</span> {message}</div>", unsafe_allow_html=True)
+
+        st.markdown("#### Your response:")
+        journal_entry = st.text_area("", key="journal_input")
 
         col1, col2 = st.columns(2)
 
@@ -401,5 +402,3 @@ if st.session_state.get("awaiting_response") == "user_journal_entry":
 
                 st.success("Session saved! 🌟")
                 st.markdown(f"**Reflection Summary:** {summary}")
-
-
