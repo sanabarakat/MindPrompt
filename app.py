@@ -283,6 +283,7 @@ elif st.session_state.page_state == "edit_profile":
 # personalized journaling page
 elif st.session_state.page_state == "personalized":
     show_page_intro("Personalized Journaling", "Let AI guide your self-reflection based on how you feel.")
+
     if "feeling" not in st.session_state:
         feeling = st.text_area("How are you feeling today?")
 
@@ -290,21 +291,30 @@ elif st.session_state.page_state == "personalized":
             sentiment_score = analyze_sentiment(feeling)
             topics = classify_topics(feeling)
             st.session_state.chat_history.append(("User", feeling))
-            followup_prompt = generate_followup_prompt(st.session_state.user_id, feeling, st.session_state.session_entries)
+            followup_prompt = generate_followup_prompt(
+                st.session_state.user_id,
+                feeling,
+                st.session_state.session_entries
+            )
             st.session_state.chat_history.append(("AI", followup_prompt))
-            st.session_state.session_entries.append({"question": "How are you feeling today?", 
-                "answer": feeling, 
+            st.session_state.session_entries.append({
+                "question": "How are you feeling today?",
+                "answer": feeling,
                 "sentiment": {
-                "dominant_emotion": sentiment_score["dominant_emotion"],
-                "top_3_emotions": sentiment_score["top_3_emotions"],
-                "emotion_scores": sentiment_score["emotion_scores"]
-            },
+                    "dominant_emotion": sentiment_score["dominant_emotion"],
+                    "top_3_emotions": sentiment_score["top_3_emotions"],
+                    "emotion_scores": sentiment_score["emotion_scores"]
+                },
                 "topics": topics
-})
+            })
             st.session_state.session_entries.append({"question": followup_prompt, "answer": None})
             st.session_state.feeling = feeling
             st.session_state.awaiting_response = "user_journal_entry"
             st.rerun()
+
+    # ✅ This will always show after initial prompt
+    elif st.session_state.get("awaiting_response") == "user_journal_entry":
+        st.text_area("Your response:", key="journal_input")
 
     if st.button("🔙 Back"):
         reset_to_main_menu()
