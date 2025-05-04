@@ -320,15 +320,17 @@ elif st.session_state.page_state == "personalized":
 elif st.session_state.page_state == "traditional":
     show_page_intro("Traditional Journaling", "Answer thought-provoking questions tailored to your personality.")
     adapted_prompt = generate_first_prompt(st.session_state.user_id)
-    if "first_prompt" not in st.session_state:
-        traditional = st.write("Reflect on this prompt....")        
-        first_prompt = adapted_prompt
-        st.session_state.first_prompt = first_prompt
-
-        st.session_state.chat_history.append(("AI", first_prompt))
-        st.session_state.session_entries.append({"question": first_prompt, "answer": None})
-        st.session_state.awaiting_response = "user_journal_entry"
-        st.rerun()
+if "first_prompt" not in st.session_state:
+    first_prompt = generate_first_prompt(st.session_state.user_id)
+    st.session_state.first_prompt = first_prompt
+    st.session_state.chat_history.append(("AI", first_prompt))
+    st.session_state.session_entries.append({"question": first_prompt, "answer": None})
+    st.session_state.awaiting_response = "user_journal_entry"
+    st.rerun()
+else:
+    # Ensures chat history displays properly even after rerun
+    if not any(msg[1] == st.session_state.first_prompt for msg in st.session_state.chat_history):
+        st.session_state.chat_history.append(("AI", st.session_state.first_prompt))
 
     if st.button("🔙 Back"):
         reset_to_main_menu()
