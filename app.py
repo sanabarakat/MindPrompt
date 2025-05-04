@@ -312,9 +312,6 @@ elif st.session_state.page_state == "personalized":
             st.session_state.awaiting_response = "user_journal_entry"
             st.rerun()
 
-    elif st.session_state.get("awaiting_response") == "user_journal_entry":
-        st.text_area("Your response:", key="journal_input")
-
     if st.button("🔙 Back"):
         reset_to_main_menu()
 
